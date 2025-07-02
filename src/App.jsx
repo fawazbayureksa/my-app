@@ -5,6 +5,7 @@ import { Routes, Route } from 'react-router-dom'
 import Dashboard from './pages/dashboard/Dashboard'
 import Users from './pages/users/Users'
 import Settings from './pages/settings/Settings'
+import Banks from './pages/banks/Banks'
 function App() {
   return (
     <div>
@@ -15,6 +16,7 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/users" element={<Users />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/banks" element={<Banks />} />
         </Routes>
         </Box>
       </Box>
