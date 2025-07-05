@@ -37,7 +37,7 @@ export default function Login() {
               description: "Login successful",
               type: "success",
             })
-            // window.location.href = '/';
+            window.location.href = '/';
           } else {
             toaster.create({
               description: "Invalid email or password",

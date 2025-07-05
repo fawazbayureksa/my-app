@@ -22,9 +22,7 @@ export default function Users() {
   const [error, setError] = useState(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-
-
-   const { isOpen, onOpen, onClose } = useDisclosure()
+  
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -172,7 +170,7 @@ export default function Users() {
                 </Dialog.Content>
               </Dialog.Positioner>
             </Portal>
-          </Dialog.Root>
+    </Dialog.Root>
     </>
   {/* )} */}
   </>
