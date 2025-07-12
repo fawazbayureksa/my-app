@@ -9,6 +9,7 @@ const Sidebar = () => {
     { label: 'Users', icon: FiUser, path: '/users' },
     { label: 'Banks', icon: FiDollarSign, path: '/banks' },
     { label: 'Settings', icon: FiSettings, path: '/settings' },
+    { label: 'Category', icon: FiSettings, path: '/categories' },
   ]
 
   return (

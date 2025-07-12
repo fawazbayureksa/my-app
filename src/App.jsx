@@ -9,6 +9,8 @@ import Banks from './pages/banks/Banks'
 import Register from './pages/users/Register'
 import Login from './pages/users/Login'
 import { useEffect, useState } from 'react'
+import Category from './pages/category/Category'
+import { Toaster } from './components/ui/toaster'
 function App() {
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
@@ -41,9 +43,11 @@ function App() {
                   <Route path="/users" element={<Users />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/banks" element={<Banks />} />
+                  <Route path="/categories" element={<Category />} />
               </Routes>
             </Box>
         </Box>
+         <Toaster />
         </>
       )}
     </div>
