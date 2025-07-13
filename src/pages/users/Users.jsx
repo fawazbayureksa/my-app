@@ -14,6 +14,8 @@ import {
   Field,
   Input,
 } from "@chakra-ui/react";
+import Config from '../../components/axios/Config';
+import axios from 'axios';
 
 export default function Users() {
   const [users, setUsers] = useState([]);
@@ -29,18 +31,20 @@ export default function Users() {
 
     const fetchUsers = async () => {
       setLoading(true);
-      try {
-        const response = await fetch('http://localhost:8080/api/users');
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        const data = await response.json();
-        setUsers(data);
-      } catch (error) {
-        setError(error.message);
-      } finally {
-        setLoading(false);
-      }
+      const token = localStorage.getItem('token');
+     
+      const url = import.meta.env.VITE_API_URL + 'users';
+      
+      let axiosInstance = axios.get(url, Config({ Authorization: `Bearer ${token}` }))
+
+      await axiosInstance.then(response => {
+          setUsers(response.data.data);
+        }).catch(error => {
+          console.error(error);
+          setError(error);
+        }).finally(() => {
+          setLoading(false);
+        });
     };
 
     const deleteUser = async (id) => {
@@ -67,7 +71,6 @@ export default function Users() {
       setModal(true)
       setName(data.name)
       setEmail(data.email)
-      // Implement editing logic here
 
     }
 
