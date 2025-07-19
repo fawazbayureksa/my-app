@@ -1,5 +1,5 @@
 import { Box, Flex, Icon, Text, VStack } from '@chakra-ui/react'
-import { FiHome, FiUser, FiSettings, FiDollarSign, FiChrome, FiHardDrive } from 'react-icons/fi'
+import { FiHome, FiUser, FiSettings, FiDollarSign, FiChrome, FiHardDrive, FiArrowDownLeft, FiArrowLeft, FiPlusSquare, FiPackage } from 'react-icons/fi'
 import { Link, useLocation } from 'react-router-dom'
 
 const Sidebar = () => {
@@ -10,6 +10,11 @@ const Sidebar = () => {
     { label: 'Banks', icon: FiDollarSign, path: '/banks' },
     { label: 'Category', icon: FiHardDrive, path: '/categories' },
     { label: 'Settings', icon: FiSettings, path: '/settings' },
+    { label: 'Transaction', icon: FiPackage, path: '/transaction' },
+    // { label: 'Banking', icon: FiChrome, path: '/banking' },
+    // { label: 'Reports', icon: FiHardDrive, path: '/reports' },
+    // { label: 'Help', icon: FiArrowDownLeft, path: '/help' },
+    { label: 'Logout', icon: FiArrowLeft, path: '/logout' },
   ]
 
   return (

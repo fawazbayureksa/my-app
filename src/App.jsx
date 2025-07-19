@@ -10,6 +10,8 @@ import Login from './pages/users/Login'
 import { useEffect, useState } from 'react'
 import Category from './pages/category/Category'
 import { Toaster } from './components/ui/toaster'
+import Logout from './components/Logout'
+import Transaction from './pages/transaction/Transaction'
 
 function Layout() {
   return (
@@ -39,6 +41,10 @@ function App() {
     }
   }, []);
 
+  const handleLogout = () => {
+    setUser(null);
+    setToken(null);
+  }
   return (
     <Routes>
       {!token ? (
@@ -55,6 +61,8 @@ function App() {
           <Route path="banks" element={<Banks />} />
           <Route path="categories" element={<Category />} />
           <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="logout" element={<Logout onLogout={handleLogout} />} />
+          <Route path="transaction" element={<Transaction />} />
         </Route>
       )}
     </Routes>

@@ -85,7 +85,7 @@ export default function Login() {
             <Input type="password" placeholder="Enter your password"  onChange={(e) => setPassword(e.target.value)} />
         </Field.Root>
           <HStack>
-      <Button colorPalette="teal" variant="solid" onClick={(e) => handleLogin(e)}>
+      <Button colorPalette="teal" variant="outline" onClick={(e) => handleLogin(e)}>
         <RiArrowRightCircleLine /> Login
       </Button>
     </HStack>

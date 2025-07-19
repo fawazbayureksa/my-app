@@ -1,0 +1,38 @@
+import { Portal, Select, createListCollection } from "@chakra-ui/react";
+
+export const SelectComponent = ({
+  options,
+  placeholder = "Select framework",
+  label = "Select framework",
+  width = "320px",
+  size = "sm",
+}) => {
+  const collection = createListCollection({ items: options });
+
+  return (
+    <Select.Root collection={collection} size={size} width={width}>
+      <Select.HiddenSelect />
+      <Select.Label>{label}</Select.Label>
+      <Select.Control>
+        <Select.Trigger>
+          <Select.ValueText placeholder={placeholder} />
+        </Select.Trigger>
+        <Select.IndicatorGroup>
+          <Select.Indicator />
+        </Select.IndicatorGroup>
+      </Select.Control>
+      <Portal>
+        <Select.Positioner>
+          <Select.Content>
+            {options.map((option) => (
+              <Select.Item item={option} key={option.value}>
+                {option.label}
+                <Select.ItemIndicator />
+              </Select.Item>
+            ))}
+          </Select.Content>
+        </Select.Positioner>
+      </Portal>
+    </Select.Root>
+  );
+};
