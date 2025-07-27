@@ -2,6 +2,8 @@ import { Portal, Select, createListCollection } from "@chakra-ui/react";
 
 export const SelectComponent = ({
   options,
+  onChange,
+  value,
   placeholder = "Select framework",
   label = "Select framework",
   width = "320px",
@@ -10,7 +12,13 @@ export const SelectComponent = ({
   const collection = createListCollection({ items: options });
 
   return (
-    <Select.Root collection={collection} size={size} width={width}>
+    <Select.Root 
+    collection={collection} 
+    size={size} 
+    width={width}
+      value={value}
+      onValueChange={({ value }) => onChange(value)}
+    >
       <Select.HiddenSelect />
       <Select.Label>{label}</Select.Label>
       <Select.Control>

@@ -14,16 +14,18 @@ import axios from 'axios'
 import { toaster } from '../../components/ui/toaster'
 import { useColorModeValue } from '../../components/ui/color-mode'
 import { SelectComponent } from '../../components/form/SelectComponent'
+import Config from '../../components/axios/Config'
 
 export default function Transaction() {
   const [banks, setBanks] = useState([])
   const [categories, setCategories] = useState([])
   const [formData, setFormData] = useState({
-    bank_id: '',
-    category_id: '',
-    amount: '',
-    description: '',
-    date: ''
+    BankID: '',
+    CategoryID: '',
+    Amount: '',
+    Description: '',
+    Date: '',
+    TransactionType: ''
   })
 
   useEffect(() => {
@@ -81,35 +83,48 @@ export default function Transaction() {
     }))
   }
 
+  const handleSelectChange = (field, val) => {
+    setFormData(prevData => ({
+      ...prevData,
+      [field]: parseInt(val[0])
+    }))
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
-    try {
-      const response = await axios.post('http://localhost:8080/api/transactions', formData)
-      toaster.create({
-        description: "Transaction recorded successfully",
-        type: "success",
-      })
-      // Reset form after successful submission
-      setFormData({
-        bank_id: '',
-        category_id: '',
-        amount: '',
-        description: '',
-        date: ''
-      })
-    } catch (error) {
-      console.error('Error recording transaction:', error)
-      toaster.create({
-        description: "Failed to record transaction",
-        type: "error",
-      })
-    }
+    const token = localStorage.getItem('token');
+    const url = import.meta.env.VITE_API_URL + 'transaction';
+
+    let axiosInstance = axios.post(url, formData, Config({ 
+      Authorization: `Bearer ${token}`
+     }))
+        
+    axiosInstance.then(response => {
+          console.log('Transaction response:', response.data)
+          toaster.create({
+            description: "Transaction recorded successfully",
+            type: "success",
+          })
+            // Reset form after successful submission
+            setFormData({
+              BankID: '',
+              CategoryID: '',
+              Amount: '',
+              Description: '',
+              Date: '',
+              TransactionType: ''
+            })
+      }).catch(error => {
+        console.error(error);
+      }).finally(() => {
+        console.log('Transaction submission completed');
+      });
   }
-const frameworks = [
-  { value: "react", label: "React" },
-  { value: "vue", label: "Vue" },
-  { value: "angular", label: "Angular" },
-];
+
+  const transactionTypes = [
+    { value: 1, label: "Income" },
+    { value: 2, label: "Expense" }
+  ];
 
   return (
     <Stack spacing={8} mx={'auto'} maxW={'lg'} py={12} px={6}>
@@ -118,27 +133,43 @@ const frameworks = [
         </Stack>
         <Box rounded={'lg'} boxShadow={'xs'} p={5} bg={useColorModeValue('white', 'gray.700')}>
         <Field.Root required marginBottom="20px">
-            <SelectComponent options={banks} label='Bank' placeholder='Select Bank' />
+            <SelectComponent 
+            options={transactionTypes} 
+            label='Transaction Type'  
+            onChange={(val) => handleSelectChange('TransactionType', val)}
+            placeholder='Select Type' />
         </Field.Root>
         <Field.Root required marginBottom="20px">
-            <SelectComponent options={categories} label='Category' placeholder='Select Category' />
+            <SelectComponent 
+            options={banks} 
+            label='Bank'  
+            onChange={(val) => handleSelectChange('BankID', val)}
+            placeholder='Select Bank' />
+        </Field.Root>
+        <Field.Root required marginBottom="20px">
+            <SelectComponent 
+            options={categories} 
+            label='Category'  
+            placeholder='Select Category'
+            onChange={(val) => handleSelectChange('CategoryID', val)}
+            />
         </Field.Root>
         <Field.Root required marginBottom="20px">
             <Field.Label> Amount <Field.RequiredIndicator /> </Field.Label>
             <Input
                 type="number"
-                name="amount"
+                name="Amount"
                 placeholder="Enter amount"
-                value={formData.amount}
+                value={formData.Amount}
                 onChange={handleInputChange}
             />
         </Field.Root>
         <Field.Root marginBottom="20px">
             <Field.Label>Description</Field.Label>
             <Input
-                name="description"
+                name="Description"
                 placeholder="Enter description"
-                value={formData.description}
+                value={formData.Description}
                 onChange={handleInputChange}
             />
         </Field.Root>
@@ -148,12 +179,12 @@ const frameworks = [
                 </Field.Label>
                 <Input
                     type="date"
-                    name="date"
-                    value={formData.date}
+                    name="Date"
+                    value={formData.Date}
                     onChange={handleInputChange}
                 />
             </Field.Root>
-        <Button colorPalette="teal" variant="outline" type="submit" colorScheme="blue">
+        <Button colorPalette="teal" onClick={handleSubmit} variant="outline" type="submit" colorScheme="blue">
             Record Transaction
         </Button>
     </Box>
