@@ -7,7 +7,6 @@ import {
   Card,
   Flex,
   Spinner,
-  VStack,
   Badge,
   Icon,
 } from '@chakra-ui/react';
@@ -19,7 +18,6 @@ import {
   FiTrendingDown,
   FiDollarSign,
   FiPieChart,
-  FiCalendar
 } from 'react-icons/fi';
 
 // Dashboard Components
@@ -63,6 +61,11 @@ const Dashboard = () => {
   const cardBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.100', 'gray.700');
   const subtitleColor = useColorModeValue('gray.600', 'gray.400');
+  const headerBg = useColorModeValue(
+    'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    'linear-gradient(135deg, #2d3748 0%, #1a202c 100%)'
+  );
+  const pageBg = useColorModeValue('gray.50', 'gray.900');
 
   const fetchMonthlyComparison = useCallback(async () => {
     try {
@@ -145,22 +148,65 @@ const Dashboard = () => {
 
 
 
+  // Savings rate calculation
+  const savingsRate = yearlyData?.total_income > 0
+    ? ((yearlyData.net_savings / yearlyData.total_income) * 100).toFixed(1)
+    : 0;
+
   return (
+    <Box minH="100vh" bg={pageBg}>
     <Box maxW="7xl" mx="auto" px={4} py={6}>
-      {/* Header */}
-      <Box mb={8}>
-        <Heading as="h1" size="xl" fontWeight="bold" mb={2}>
-          {getGreeting()}, {userName} 👋
-        </Heading>
-        <Flex align="center" justifyContent={"space-between"} gap={4}>
-          <Text color={subtitleColor} fontSize="lg">
-            Here's your financial overview
-          </Text>
-          <Flex gap={3}>
-            <PayCycleToggle isEnabled={usePayCycle} onToggle={handlePayCycleToggle} />
-            <VisibilityToggle isHidden={isHidden} onToggle={toggleVisibility} />
+      {/* Header Hero Card */}
+      <Box
+        mb={8}
+        p={6}
+        borderRadius="2xl"
+        bgGradient={headerBg}
+        color="white"
+        position="relative"
+        overflow="hidden"
+      >
+        {/* Decorative circles */}
+        <Box
+          position="absolute" top="-20px" right="-20px"
+          w="120px" h="120px" borderRadius="full"
+          bg="whiteAlpha.100"
+        />
+        <Box
+          position="absolute" bottom="-30px" right="80px"
+          w="80px" h="80px" borderRadius="full"
+          bg="whiteAlpha.100"
+        />
+        <Flex justify="space-between" align="flex-start" wrap="wrap" gap={4}>
+          <Box>
+            <Text fontSize="sm" fontWeight="medium" opacity={0.8} mb={1} letterSpacing="wide">
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </Text>
+            <Heading as="h1" size="xl" fontWeight="bold" mb={1} color="white">
+              {getGreeting()}, {userName} 👋
+            </Heading>
+            <Text opacity={0.85} fontSize="md">
+              Here's your financial overview
+            </Text>
+          </Box>
+          <Flex gap={2} align="center" pt={1}>
+            <Box
+              bg="whiteAlpha.200"
+              px={3} py={2}
+              borderRadius="xl"
+              backdropFilter="blur(8px)"
+            >
+              <PayCycleToggle isEnabled={usePayCycle} onToggle={handlePayCycleToggle} />
+            </Box>
+            <Box
+              bg="whiteAlpha.200"
+              borderRadius="xl"
+              backdropFilter="blur(8px)"
+            >
+              <VisibilityToggle isHidden={isHidden} onToggle={toggleVisibility} />
+            </Box>
           </Flex>
-          </Flex>
+        </Flex>
       </Box>
 
       {/* Summary Stats */}
@@ -200,79 +246,80 @@ const Dashboard = () => {
             colorScheme="blue"
           />
           <StatCard
-            title="Current Year"
-            value={yearlyData?.year || new Date().getFullYear()}
-            icon={FiCalendar}
+            title="Savings Rate"
+            value={`${savingsRate}%`}
+            icon={FiPieChart}
             colorScheme="purple"
+            change={parseFloat(savingsRate) > 20 ? parseFloat(savingsRate) - 20 : parseFloat(savingsRate) - 20}
+            changeLabel="vs 20% goal"
           />
         </Grid>
       )}
 
-      {/* Monthly Comparison Section */}
-      <Card.Root
-        bg={cardBg}
-        borderRadius="2xl"
-        border="1px solid"
-        borderColor={borderColor}
-        mb={8}
-        overflow="hidden"
-      >
-        <Card.Body p={6}>
-          <Flex justify="space-between" align="center" mb={4}>
-            <Box>
-              <Heading as="h3" size="md" fontWeight="bold">
-                Income vs Expense
-              </Heading>
-              <Text color={subtitleColor} fontSize="sm">
-                Last 6 months comparison
-              </Text>
-            </Box>
-            <Badge colorPalette="blue" variant="subtle" px={3} py={1} borderRadius="full">
-              Monthly
-            </Badge>
-          </Flex>
-
-          {loadingMonthly ? (
-            <Flex justify="center" py={12}>
-              <Spinner size="xl" color="blue.500" />
+      {/* Charts Row: Monthly Comparison + Net Savings side-by-side */}
+      <Grid templateColumns={{ base: '1fr', lg: '3fr 2fr' }} gap={6} mb={8}>
+        {/* Monthly Comparison */}
+        <Card.Root
+          bg={cardBg}
+          borderRadius="2xl"
+          border="1px solid"
+          borderColor={borderColor}
+          overflow="hidden"
+        >
+          <Card.Body p={6}>
+            <Flex justify="space-between" align="center" mb={4}>
+              <Box>
+                <Heading as="h3" size="md" fontWeight="bold">
+                  Income vs Expense
+                </Heading>
+                <Text color={subtitleColor} fontSize="sm">
+                  Last 6 months comparison
+                </Text>
+              </Box>
+              <Badge colorPalette="blue" variant="subtle" px={3} py={1} borderRadius="full">
+                Monthly
+              </Badge>
             </Flex>
-          ) : (
-            <MonthlyComparisonChart data={monthlyData} />
-          )}
-        </Card.Body>
-      </Card.Root>
+            {loadingMonthly ? (
+              <Flex justify="center" py={12}>
+                <Spinner size="xl" color="blue.500" />
+              </Flex>
+            ) : (
+              <MonthlyComparisonChart data={monthlyData} />
+            )}
+          </Card.Body>
+        </Card.Root>
 
-      {/* Net Savings Trend */}
-      <Card.Root
-        bg={cardBg}
-        borderRadius="2xl"
-        border="1px solid"
-        borderColor={borderColor}
-        mb={8}
-        overflow="hidden"
-      >
-        <Card.Body p={6}>
-          <Flex justify="space-between" align="center" mb={4}>
-            <Box>
-              <Heading as="h3" size="md" fontWeight="bold">
-                Net Savings Trend
-              </Heading>
-              <Text color={subtitleColor} fontSize="sm">
-                Your savings over time
-              </Text>
-            </Box>
-            <Icon as={FiTrendingUp} boxSize={5} color="blue.500" />
-          </Flex>
-
-          {loadingMonthly ? (
-            <Flex justify="center" py={12}>
-              <Spinner size="xl" color="blue.500" />
+        {/* Net Savings Trend */}
+        <Card.Root
+          bg={cardBg}
+          borderRadius="2xl"
+          border="1px solid"
+          borderColor={borderColor}
+          overflow="hidden"
+        >
+          <Card.Body p={6}>
+            <Flex justify="space-between" align="center" mb={4}>
+              <Box>
+                <Heading as="h3" size="md" fontWeight="bold">
+                  Net Savings
+                </Heading>
+                <Text color={subtitleColor} fontSize="sm">
+                  Savings over time
+                </Text>
+              </Box>
+              <Icon as={FiTrendingUp} boxSize={5} color="blue.500" />
             </Flex>
-          ) : (
-            <NetSavingsChart data={monthlyData} />
-          )}
-        </Card.Body>
-      </Card.Root>
+            {loadingMonthly ? (
+              <Flex justify="center" py={12}>
+                <Spinner size="xl" color="blue.500" />
+              </Flex>
+            ) : (
+              <NetSavingsChart data={monthlyData} />
+            )}
+          </Card.Body>
+        </Card.Root>
+      </Grid>
 
       {/* Category Breakdown */}
       <Grid templateColumns={{ base: '1fr', lg: 'repeat(2, 1fr)' }} gap={6}>
@@ -350,44 +397,94 @@ const Dashboard = () => {
       </Grid>
 
       {/* Quick Stats Footer */}
-      <Card.Root
-        bg={cardBg}
-        borderRadius="2xl"
-        border="1px solid"
-        borderColor={borderColor}
-        mt={8}
-        overflow="hidden"
-      >
-        <Card.Body p={6}>
-          <Flex
-            justify="space-around"
-            align="center"
-            wrap="wrap"
-            gap={4}
+      <Box mt={8}>
+        <Heading as="h3" size="sm" fontWeight="semibold" color={subtitleColor} mb={3} textTransform="uppercase" letterSpacing="wider">
+          This Month Summary
+        </Heading>
+        <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={4}>
+          <Box
+            p={5}
+            borderRadius="2xl"
+            bg={useColorModeValue('green.50', 'green.900')}
+            border="1px solid"
+            borderColor={useColorModeValue('green.200', 'green.700')}
           >
-            <VStack>
-              <Text color={subtitleColor} fontSize="sm">This Month Income</Text>
-              <Text fontSize="xl" fontWeight="bold" color="green.500">
-                {displayCurrency(latestIncome)}
-              </Text>
-            </VStack>
-            <Box h="40px" w="1px" bg={borderColor} display={{ base: 'none', md: 'block' }} />
-            <VStack>
-              <Text color={subtitleColor} fontSize="sm">This Month Expense</Text>
-              <Text fontSize="xl" fontWeight="bold" color="red.500">
-                {displayCurrency(latestExpense)}
-              </Text>
-            </VStack>
-            <Box h="40px" w="1px" bg={borderColor} display={{ base: 'none', md: 'block' }} />
-            <VStack>
-              <Text color={subtitleColor} fontSize="sm">This Month Net</Text>
-              <Text fontSize="xl" fontWeight="bold" color={latestNet >= 0 ? 'blue.500' : 'red.500'}>
-                {displayCurrency(latestNet)}
-              </Text>
-            </VStack>
-          </Flex>
-        </Card.Body>
-      </Card.Root>
+            <Flex align="center" gap={3}>
+              <Flex
+                w={10} h={10} align="center" justify="center"
+                borderRadius="xl" bg={useColorModeValue('green.100', 'green.800')}
+              >
+                <Icon as={FiTrendingUp} boxSize={5} color={useColorModeValue('green.600', 'green.300')} />
+              </Flex>
+              <Box>
+                <Text fontSize="xs" fontWeight="medium" color={useColorModeValue('green.700', 'green.300')} textTransform="uppercase" letterSpacing="wide">
+                  Income
+                </Text>
+                <Text fontSize="xl" fontWeight="bold" color={useColorModeValue('green.700', 'green.200')}>
+                  {displayCurrency(latestIncome)}
+                </Text>
+              </Box>
+            </Flex>
+          </Box>
+
+          <Box
+            p={5}
+            borderRadius="2xl"
+            bg={useColorModeValue('red.50', 'red.900')}
+            border="1px solid"
+            borderColor={useColorModeValue('red.200', 'red.700')}
+          >
+            <Flex align="center" gap={3}>
+              <Flex
+                w={10} h={10} align="center" justify="center"
+                borderRadius="xl" bg={useColorModeValue('red.100', 'red.800')}
+              >
+                <Icon as={FiTrendingDown} boxSize={5} color={useColorModeValue('red.600', 'red.300')} />
+              </Flex>
+              <Box>
+                <Text fontSize="xs" fontWeight="medium" color={useColorModeValue('red.700', 'red.300')} textTransform="uppercase" letterSpacing="wide">
+                  Expense
+                </Text>
+                <Text fontSize="xl" fontWeight="bold" color={useColorModeValue('red.700', 'red.200')}>
+                  {displayCurrency(latestExpense)}
+                </Text>
+              </Box>
+            </Flex>
+          </Box>
+
+          <Box
+            p={5}
+            borderRadius="2xl"
+            bg={useColorModeValue(latestNet >= 0 ? 'blue.50' : 'orange.50', latestNet >= 0 ? 'blue.900' : 'orange.900')}
+            border="1px solid"
+            borderColor={useColorModeValue(latestNet >= 0 ? 'blue.200' : 'orange.200', latestNet >= 0 ? 'blue.700' : 'orange.700')}
+          >
+            <Flex align="center" gap={3}>
+              <Flex
+                w={10} h={10} align="center" justify="center"
+                borderRadius="xl"
+                bg={useColorModeValue(latestNet >= 0 ? 'blue.100' : 'orange.100', latestNet >= 0 ? 'blue.800' : 'orange.800')}
+              >
+                <Icon as={FiDollarSign} boxSize={5} color={useColorModeValue(latestNet >= 0 ? 'blue.600' : 'orange.600', latestNet >= 0 ? 'blue.300' : 'orange.300')} />
+              </Flex>
+              <Box>
+                <Text fontSize="xs" fontWeight="medium"
+                  color={useColorModeValue(latestNet >= 0 ? 'blue.700' : 'orange.700', latestNet >= 0 ? 'blue.300' : 'orange.300')}
+                  textTransform="uppercase" letterSpacing="wide"
+                >
+                  Net
+                </Text>
+                <Text fontSize="xl" fontWeight="bold"
+                  color={useColorModeValue(latestNet >= 0 ? 'blue.700' : 'orange.700', latestNet >= 0 ? 'blue.200' : 'orange.200')}
+                >
+                  {displayCurrency(latestNet)}
+                </Text>
+              </Box>
+            </Flex>
+          </Box>
+        </Grid>
+      </Box>
+    </Box>
     </Box>
   );
 };
