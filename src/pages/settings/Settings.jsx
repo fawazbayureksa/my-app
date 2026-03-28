@@ -1,6 +1,7 @@
 import { Box, Heading, Text, Stack, Card, Flex } from '@chakra-ui/react';
-import { FiCalendar, FiUser, FiSettings } from 'react-icons/fi';
+import { FiCalendar } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
+import EmailSyncCard from '../../components/settings/EmailSyncCard';
 
 const SettingsCard = ({ icon: Icon, title, description, onClick }) => {
   return (
@@ -46,6 +47,8 @@ const Settings = () => {
           description="Configure your financial period to match your income schedule"
           onClick={() => navigate('/settings/pay-cycle')}
         />
+
+        <EmailSyncCard />
       </Stack>
     </Box>
   );
