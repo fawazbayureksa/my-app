@@ -26,19 +26,22 @@ import {
   FiCreditCard,
   FiArrowDown,
   FiArrowUp,
-  FiX,
-  FiPlus,
+  FiTag,
 } from 'react-icons/fi'
 import { TagSelector } from '../../components/tags/TagSelector'
+import { SelectComponent } from '../../components/form/SelectComponent'
 
 export default function TransactionDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
 
   const [transaction, setTransaction] = useState(null)
+  const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(false)
-  const [tagLoading, setTagLoading] = useState(false)
-  const [showTagSelector, setShowTagSelector] = useState(false)
+  const [updatingMeta, setUpdatingMeta] = useState(false)
+  const [showMetaEditor, setShowMetaEditor] = useState(false)
+  const [selectedCategoryId, setSelectedCategoryId] = useState('')
+  const [selectedTags, setSelectedTags] = useState([])
 
   const cardBg = useColorModeValue('white', 'gray.800')
   const borderColor = useColorModeValue('gray.200', 'gray.700')
@@ -49,7 +52,11 @@ export default function TransactionDetail() {
   const expenseBg = useColorModeValue('red.50', 'red.900')
 
   useEffect(() => {
-    fetchTransaction()
+    const init = async () => {
+      await Promise.all([fetchTransaction(), fetchCategories()])
+    }
+
+    init()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
@@ -59,7 +66,10 @@ export default function TransactionDetail() {
     try {
       const url = import.meta.env.VITE_API_URL + `v2/transactions/${id}`
       const response = await axios.get(url, Config({ Authorization: `Bearer ${token}` }))
-      setTransaction(response.data.data)
+      const detail = response.data.data
+      setTransaction(detail)
+      setSelectedCategoryId(detail?.category_id ? String(detail.category_id) : '')
+      setSelectedTags(detail?.tags || [])
     } catch {
       toaster.create({
         description: 'Failed to fetch transaction',
@@ -68,6 +78,26 @@ export default function TransactionDetail() {
       navigate('/transactions')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchCategories = async () => {
+    const token = localStorage.getItem('token')
+    try {
+      const url = import.meta.env.VITE_API_URL + 'categories'
+      const response = await axios.get(url, Config({ Authorization: `Bearer ${token}` }))
+      const categoriesData = response.data.data || []
+      setCategories(
+        categoriesData.map((category) => ({
+          label: category.CategoryName,
+          value: String(category.ID),
+        }))
+      )
+    } catch {
+      toaster.create({
+        description: 'Failed to fetch categories',
+        type: 'error',
+      })
     }
   }
 
@@ -86,63 +116,60 @@ export default function TransactionDetail() {
       day: 'numeric',
     })
 
-  // Optimistic: add tags via the API
-  const handleAddTags = async (newSelectedTags) => {
-    const currentTagIds = (transaction?.tags || []).map((t) => t.id)
-    const addedTags = newSelectedTags.filter((t) => !currentTagIds.includes(t.id))
-    if (addedTags.length === 0) return
+  const handleSaveCategoryAndTags = async () => {
+    if (!transaction) return
 
-    // Optimistic UI update
-    setTransaction((prev) => ({
-      ...prev,
-      tags: [...(prev.tags || []), ...addedTags],
-    }))
-    setShowTagSelector(false)
-
-    setTagLoading(true)
+    setUpdatingMeta(true)
     const token = localStorage.getItem('token')
     try {
-      const url = import.meta.env.VITE_API_URL + `v2/transactions/${id}/tags`
-      await axios.post(
+      const url = import.meta.env.VITE_API_URL + `v2/transactions/${id}`
+      const payload = {
+        category_id: selectedCategoryId ? parseInt(selectedCategoryId, 10) : null,
+        tag_ids: selectedTags.map((tag) => tag.id),
+      }
+
+      const response = await axios.put(
         url,
-        { tag_ids: addedTags.map((t) => t.id) },
+        payload,
         Config({ Authorization: `Bearer ${token}` })
       )
-      toaster.create({ description: 'Tags added', type: 'success' })
-    } catch {
-      // Rollback
-      setTransaction((prev) => ({
-        ...prev,
-        tags: (prev.tags || []).filter((t) => !addedTags.some((a) => a.id === t.id)),
-      }))
-      toaster.create({ description: 'Failed to add tags', type: 'error' })
+
+      const updated = response?.data?.data
+      if (updated) {
+        setTransaction(updated)
+      } else {
+        setTransaction((prev) => ({
+          ...prev,
+          category_id: selectedCategoryId ? parseInt(selectedCategoryId, 10) : null,
+          category_name: selectedCategoryId
+            ? categories.find((category) => category.value === selectedCategoryId)?.label || prev.category_name
+            : null,
+          tags: selectedTags,
+        }))
+      }
+
+      setShowMetaEditor(false)
+      toaster.create({ description: 'Category and tags updated', type: 'success' })
+    } catch (error) {
+      toaster.create({
+        description: error.response?.data?.message || 'Failed to update category and tags',
+        type: 'error',
+      })
     } finally {
-      setTagLoading(false)
+      setUpdatingMeta(false)
     }
   }
 
-  const handleRemoveTag = async (tagId) => {
-    const originalTags = transaction?.tags || []
+  const handleCancelMetaEdit = () => {
+    setSelectedCategoryId(transaction?.category_id ? String(transaction.category_id) : '')
+    setSelectedTags(transaction?.tags || [])
+    setShowMetaEditor(false)
+  }
 
-    // Optimistic UI update
-    setTransaction((prev) => ({
-      ...prev,
-      tags: (prev.tags || []).filter((t) => t.id !== tagId),
-    }))
-
-    setTagLoading(true)
-    const token = localStorage.getItem('token')
-    try {
-      const url = import.meta.env.VITE_API_URL + `v2/transactions/${id}/tags/${tagId}`
-      await axios.delete(url, Config({ Authorization: `Bearer ${token}` }))
-      toaster.create({ description: 'Tag removed', type: 'success' })
-    } catch {
-      // Rollback
-      setTransaction((prev) => ({ ...prev, tags: originalTags }))
-      toaster.create({ description: 'Failed to remove tag', type: 'error' })
-    } finally {
-      setTagLoading(false)
-    }
+  const openMetaEditor = () => {
+    setSelectedCategoryId(transaction?.category_id ? String(transaction.category_id) : '')
+    setSelectedTags(transaction?.tags || [])
+    setShowMetaEditor(true)
   }
 
   if (loading) {
@@ -252,9 +279,32 @@ export default function TransactionDetail() {
                     <Icon as={FiFolder} />
                     <Text fontSize="sm">Category</Text>
                   </HStack>
-                  <Badge colorPalette="purple" variant="subtle">
-                    {transaction.category_name || '—'}
-                  </Badge>
+                  {showMetaEditor ? (
+                    <HStack gap={2}>
+                      <Box minW="220px">
+                        <SelectComponent
+                          options={categories}
+                          value={selectedCategoryId ? [selectedCategoryId] : []}
+                          label=""
+                          placeholder="No category"
+                          onChange={(value) => setSelectedCategoryId(value[0] || '')}
+                          width="100%"
+                          size="sm"
+                        />
+                      </Box>
+                      <Button
+                        size="xs"
+                        variant="outline"
+                        onClick={() => setSelectedCategoryId('')}
+                      >
+                        Clear
+                      </Button>
+                    </HStack>
+                  ) : (
+                    <Badge colorPalette="purple" variant="subtle">
+                      {transaction.category_name || '—'}
+                    </Badge>
+                  )}
                 </Flex>
 
                 <Flex justify="space-between" align="center">
@@ -274,26 +324,50 @@ export default function TransactionDetail() {
             {/* Tags section with inline editing */}
             <Box>
               <Flex justify="space-between" align="center" mb={3}>
-                <Text fontSize="xs" fontWeight="semibold" color={subtitleColor} textTransform="uppercase">
-                  Tags
-                </Text>
-                <Button
-                  size="xs"
-                  variant="ghost"
-                  colorPalette="blue"
-                  borderRadius="md"
-                  onClick={() => setShowTagSelector((v) => !v)}
-                  loading={tagLoading}
-                >
-                  <Icon as={FiPlus} mr={1} />
-                  Add Tag
-                </Button>
+                <HStack color={subtitleColor} gap={2}>
+                  <Icon as={FiTag} />
+                  <Text fontSize="xs" fontWeight="semibold" textTransform="uppercase">
+                    Tags
+                  </Text>
+                </HStack>
+                {showMetaEditor ? (
+                  <HStack gap={2}>
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      borderRadius="md"
+                      onClick={handleCancelMetaEdit}
+                      disabled={updatingMeta}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="xs"
+                      colorPalette="blue"
+                      borderRadius="md"
+                      onClick={handleSaveCategoryAndTags}
+                      loading={updatingMeta}
+                    >
+                      Save Changes
+                    </Button>
+                  </HStack>
+                ) : (
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    colorPalette="blue"
+                    borderRadius="md"
+                    onClick={openMetaEditor}
+                  >
+                    Edit Category & Tags
+                  </Button>
+                )}
               </Flex>
 
               {/* Existing tags */}
-              {transaction.tags && transaction.tags.length > 0 ? (
-                <Flex gap={2} flexWrap="wrap" mb={showTagSelector ? 3 : 0}>
-                  {transaction.tags.map((tag) => (
+              {selectedTags && selectedTags.length > 0 ? (
+                <Flex gap={2} flexWrap="wrap" mb={showMetaEditor ? 3 : 0}>
+                  {selectedTags.map((tag) => (
                     <Badge
                       key={tag.id}
                       px={2}
@@ -310,20 +384,11 @@ export default function TransactionDetail() {
                     >
                       {tag.icon && <span>{tag.icon}</span>}
                       {tag.name}
-                      <Box
-                        as="button"
-                        onClick={() => handleRemoveTag(tag.id)}
-                        ml={1}
-                        cursor="pointer"
-                        aria-label={`Remove tag ${tag.name}`}
-                      >
-                        <Icon as={FiX} boxSize="10px" />
-                      </Box>
                     </Badge>
                   ))}
                 </Flex>
               ) : (
-                !showTagSelector && (
+                !showMetaEditor && (
                   <Text fontSize="sm" color={subtitleColor}>
                     No tags attached yet.
                   </Text>
@@ -331,14 +396,17 @@ export default function TransactionDetail() {
               )}
 
               {/* Inline tag selector */}
-              {showTagSelector && (
+              {showMetaEditor && (
                 <Box mt={2}>
                   <TagSelector
-                    selectedTags={transaction.tags || []}
-                    onTagsChange={handleAddTags}
-                    categoryId={transaction.category_id}
+                    selectedTags={selectedTags}
+                    onTagsChange={setSelectedTags}
+                    categoryId={selectedCategoryId || ''}
                     description={transaction.description}
                   />
+                  <Text fontSize="xs" color={subtitleColor} mt={2}>
+                    Saving will replace the transaction tag list with the selected tags.
+                  </Text>
                 </Box>
               )}
             </Box>

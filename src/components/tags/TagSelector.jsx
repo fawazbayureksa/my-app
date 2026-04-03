@@ -21,7 +21,6 @@ import { toaster } from '../ui/toaster';
 const EMOJI_OPTIONS = ['🏷️', '🔖', '💰', '🛒', '🏠', '🚗', '✈️', '🎁', '💳', '📱', '💻', '🍔', '☕', '🏥', '📚', '🎬', '🎵', '🎮', '⚽', '🎯'];
 
 export const TagSelector = ({ selectedTags, onTagsChange, categoryId, description }) => {
-  const [isOpen, setIsOpen] = useState(false);
   const [tags, setTags] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
@@ -132,8 +131,8 @@ export const TagSelector = ({ selectedTags, onTagsChange, categoryId, descriptio
 
   return (
     <Box>
-      <Popover.Root open={isOpen} onOpenChange={(e) => setIsOpen(e.open)}>
-        <PopoverTrigger asChild>
+      <Popover.Root>
+        <Popover.Trigger asChild>
           <Box
             p={3}
             borderRadius="xl"
@@ -143,7 +142,6 @@ export const TagSelector = ({ selectedTags, onTagsChange, categoryId, descriptio
             cursor="pointer"
             _hover={{ borderColor: 'blue.400' }}
             transition="all 0.2s"
-            onClick={() => setIsOpen(true)}
           >
             {selectedTags.length > 0 ? (
               <Flex gap={2} flexWrap="wrap">
@@ -189,11 +187,12 @@ export const TagSelector = ({ selectedTags, onTagsChange, categoryId, descriptio
               </Flex>
             )}
           </Box>
-        </PopoverTrigger>
+        </Popover.Trigger>
         <Portal>
-          <PopoverContent w="400px" p={0} boxShadow="xl" borderRadius="xl" border="1px solid" borderColor={borderColor}>
-            <PopoverBody p={3}>
-              <VStack gap={3} align="stretch">
+          <Popover.Positioner>
+            <Popover.Content w="400px" p={0} boxShadow="xl" borderRadius="xl" border="1px solid" borderColor={borderColor} zIndex={2000}>
+              <Popover.Body p={3}>
+                <VStack gap={3} align="stretch">
                 <HStack gap={2}>
                   <Input
                     placeholder="Search tags..."
@@ -306,9 +305,10 @@ export const TagSelector = ({ selectedTags, onTagsChange, categoryId, descriptio
                 ) : (
                   <Text fontSize="sm" color="gray.500" textAlign="center">No tags found</Text>
                 )}
-              </VStack>
-            </PopoverBody>
-          </PopoverContent>
+                </VStack>
+              </Popover.Body>
+            </Popover.Content>
+          </Popover.Positioner>
         </Portal>
       </Popover.Root>
     </Box>
