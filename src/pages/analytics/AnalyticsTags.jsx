@@ -79,7 +79,7 @@ export default function AnalyticsTags() {
         <Box>
           <Flex align="center" gap={3}>
             <Icon as={FiTrendingDown} boxSize={6} color="blue.500" />
-            <Heading as="h1" size="xl" fontWeight="bold">
+            <Heading as="h5" size="xl" fontWeight="bold">
               Spending by Tag
             </Heading>
           </Flex>
