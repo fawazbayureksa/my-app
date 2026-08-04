@@ -19,8 +19,8 @@ import {
   IconButton,
   useBreakpointValue
 } from "@chakra-ui/react";
-import axios from 'axios';
-import { FiSettings, FiRefreshCw } from 'react-icons/fi';
+import { useColorModeValue } from '../../components/ui/color-mode';
+import { FiSettings, FiRefreshCw, FiTrendingUp, FiTrendingDown, FiDollarSign, FiPieChart, FiFilter, FiCalendar } from 'react-icons/fi';
 import Config from '../../components/axios/Config';
 import { toaster } from "./../../components/ui/toaster";
 import { useLocalValueVisibility } from '../../hooks/useValueVisibility';
@@ -250,9 +250,14 @@ export default function Financials() {
     return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
+  const cardBg = useColorModeValue('white', 'gray.800');
+  const borderColor = useColorModeValue('gray.100', 'gray.700');
+  const subtitleColor = useColorModeValue('gray.600', 'gray.400');
+  const pageBg = useColorModeValue('gray.50', 'gray.900');
+
   if (loading) {
     return (
-      <Flex justify="center" align="center" minH="400px">
+      <Flex justify="center" align="center" minH="500px">
         <Spinner size="xl" color="blue.500" />
       </Flex>
     );
@@ -263,254 +268,401 @@ export default function Financials() {
   const budgetSummary = dashboardData?.budget_summary || {};
 
   return (
-    <Box maxW="7xl" mx="auto" px={4} py={8}>
-      <Flex justify="space-between" align="center" mb={6}>
-        <Box>
-          <Heading as="h3" size="lg">
-            Financial Analytics
-          </Heading>
-          {usePayCycle && payCyclePeriods.length > 0 && (
-            <Text fontSize="sm" color="gray.500" mt={1}>
-              Pay Cycle Periods
-            </Text>
-          )}
-        </Box>
-        <HStack gap={4}>
-            {userSettings && !isMobile && (
-              <Tooltip.Root>
-                <Tooltip.Trigger asChild>
-                  <HStack gap={2}>
-                    <ChakraSwitch.Root
-                      checked={usePayCycle}
-                      onCheckedChange={(details) =>
-                        handleTogglePayCycle(details.checked)
-                      }
-                      colorPalette="blue"
-                      size="md"
-                    >
-                      <ChakraSwitch.HiddenInput />
-                      <ChakraSwitch.Control>
-                        <ChakraSwitch.Thumb />
-                      </ChakraSwitch.Control>
-                    </ChakraSwitch.Root>
-
-                    <Text fontSize="sm" fontWeight="medium">
-                      Use Pay Cycle
-                    </Text>
-                  </HStack>
-                </Tooltip.Trigger>
-
-                <Tooltip.Content>
-                  Use your custom pay cycle ({userSettings.pay_cycle_type}) for analytics
-                </Tooltip.Content>
-              </Tooltip.Root>
-            )}
-          {userSettings && isMobile && (
-            <Tooltip.Root>
-              <Tooltip.Trigger asChild>
-                <IconButton
-                  size="sm"
-                  variant="ghost"
-                  colorPalette="blue"
-                  aria-label="Pay Cycle Settings"
-                  onClick={handleOpenSettings}
-                >
-                  <FiSettings />
-                </IconButton>
-              </Tooltip.Trigger>
-
-              <Tooltip.Content>
-                Pay Cycle Settings
-              </Tooltip.Content>
-            </Tooltip.Root>
-          )}
-
-          <VisibilityToggle isHidden={isHidden} onToggle={toggleVisibility} />
-        </HStack>
-      </Flex>
-
-      {usePayCycle && payCyclePeriods.length > 0 && (
-        <Card.Root mb={6} p={4} bg="blue.50" _dark={{ bg: 'blue.900' }}>
-          <Text fontSize="sm" fontWeight="bold" color="blue.700" _dark={{ color: 'blue.200' }} mb={2}>
-            Pay Cycle Periods:
-          </Text>
-          <VStack gap={2} align="stretch">
-            {payCyclePeriods.slice(0, 3).map((period, idx) => (
-              <Flex key={idx} justify="space-between" align="center">
-                <Text fontSize="xs" color="blue.600" _dark={{ color: 'blue.300' }}>
-                  Period {idx + 1}: {formatDate(period.period_start)} - {formatDate(period.period_end)}
-                </Text>
-                <Badge size="sm" colorScheme={period.is_current ? 'green' : 'gray'}>
-                  {period.is_current ? 'Current' : 'Completed'}
-                </Badge>
-              </Flex>
-            ))}
-            {payCyclePeriods.length > 3 && (
-              <Text fontSize="xs" color="blue.600" _dark={{ color: 'blue.300' }} textAlign="center">
-                ... and {payCyclePeriods.length - 3} more periods
+    <Box minH="100vh" bg={pageBg}>
+      <Box maxW="7xl" mx="auto" px={{ base: 4, sm: 6, lg: 8 }} py={8}>
+        {/* Header Hero Section */}
+        <Flex
+          justify="space-between"
+          align={{ base: 'flex-start', lg: 'center' }}
+          direction={{ base: 'column', lg: 'row' }}
+          gap={6}
+          mb={8}
+          pb={6}
+          borderBottom="1px solid"
+          borderColor={borderColor}
+        >
+          <Box>
+            <Flex align="center" gap={2} mb={2}>
+              <Box w={2} h={2} borderRadius="full" bg="blue.500" />
+              <Text fontSize="xs" fontWeight="600" textTransform="uppercase" letterSpacing="widest" color={subtitleColor}>
+                Financial Analytics
               </Text>
-            )}
-          </VStack>
-        </Card.Root>
-      )}
+            </Flex>
+            <Heading as="h5" size={{ base: 'xl', md: '2xl' }} fontWeight="800" letterSpacing="tight" mb={1.5}>
+              Financial Performance
+            </Heading>
+            <Text color={subtitleColor} fontSize="md">
+              Deep dive into income streams, expense breakdowns, asset distribution, and budget health.
+            </Text>
+          </Box>
 
-      {/* Date Range Filter */}
-      <Card.Root mb={6} p={4} bg={{ base: 'white', _dark: 'gray.800' }}>
-        <Flex gap={3} align="end" wrap="wrap">
-          <Box>
-            <Text fontSize="sm" fontWeight="medium" mb={2} color={{ base: 'gray.700', _dark: 'gray.200' }}>Start Date</Text>
-            <Input
-              type="date"
-              name="start_date"
-              value={inputDateRange.start_date}
-              onChange={handleDateChange}
-              bg={{ base: 'white', _dark: 'gray.700' }}
-              borderColor={{ base: 'gray.300', _dark: 'gray.600' }}
-            />
-          </Box>
-          <Box>
-            <Text fontSize="sm" fontWeight="medium" mb={2} color={{ base: 'gray.700', _dark: 'gray.200' }}>End Date</Text>
-            <Input
-              type="date"
-              name="end_date"
-              value={inputDateRange.end_date}
-              onChange={handleDateChange}
-              bg={{ base: 'white', _dark: 'gray.700' }}
-              borderColor={{ base: 'gray.300', _dark: 'gray.600' }}
-            />
-          </Box>
-          <Button onClick={applyDateFilter} bg={{ base: 'blue.500', _dark: 'blue.600' }} color="white" _hover={{ bg: { base: 'blue.600', _dark: 'blue.700' } }}>
-            Apply Filter
-          </Button>
+          {/* Action Toolbar & Filters */}
+          <Flex align="center" gap={3} wrap="wrap">
+            <HStack
+              bg={cardBg}
+              p={2}
+              borderRadius="2xl"
+              border="1px solid"
+              borderColor={borderColor}
+              shadow="xs"
+              gap={3}
+              wrap="wrap"
+            >
+              <Flex align="center" gap={2} px={1}>
+                <Flex align="center" gap={1.5}>
+                  <Text fontSize="xs" fontWeight="600" color={subtitleColor}>From</Text>
+                  <Input
+                    type="date"
+                    name="start_date"
+                    size="sm"
+                    value={inputDateRange.start_date}
+                    onChange={handleDateChange}
+                    bg={useColorModeValue('gray.50', 'gray.900')}
+                    borderColor={borderColor}
+                    borderRadius="xl"
+                    w={{ base: '130px', sm: '145px' }}
+                  />
+                </Flex>
+                <Flex align="center" gap={1.5}>
+                  <Text fontSize="xs" fontWeight="600" color={subtitleColor}>To</Text>
+                  <Input
+                    type="date"
+                    name="end_date"
+                    size="sm"
+                    value={inputDateRange.end_date}
+                    onChange={handleDateChange}
+                    bg={useColorModeValue('gray.50', 'gray.900')}
+                    borderColor={borderColor}
+                    borderRadius="xl"
+                    w={{ base: '130px', sm: '145px' }}
+                  />
+                </Flex>
+                <Button
+                  size="sm"
+                  onClick={applyDateFilter}
+                  colorPalette="blue"
+                  borderRadius="xl"
+                  px={3.5}
+                  fontWeight="600"
+                >
+                  Filter
+                </Button>
+              </Flex>
+
+              <Box w="1px" h={6} bg={borderColor} display={{ base: 'none', sm: 'block' }} />
+
+              <HStack gap={3} px={1}>
+                {userSettings && !isMobile && (
+                  <Tooltip.Root>
+                    <Tooltip.Trigger asChild>
+                      <HStack gap={2}>
+                        <ChakraSwitch.Root
+                          checked={usePayCycle}
+                          onCheckedChange={(details) => handleTogglePayCycle(details.checked)}
+                          colorPalette="blue"
+                          size="sm"
+                        >
+                          <ChakraSwitch.HiddenInput />
+                          <ChakraSwitch.Control>
+                            <ChakraSwitch.Thumb />
+                          </ChakraSwitch.Control>
+                        </ChakraSwitch.Root>
+                        <Text fontSize="xs" fontWeight="600" color={subtitleColor}>
+                          Pay Cycle
+                        </Text>
+                      </HStack>
+                    </Tooltip.Trigger>
+                    <Tooltip.Content>
+                      Use custom pay cycle ({userSettings.pay_cycle_type})
+                    </Tooltip.Content>
+                  </Tooltip.Root>
+                )}
+
+                {userSettings && isMobile && (
+                  <IconButton
+                    size="sm"
+                    variant="ghost"
+                    colorPalette="blue"
+                    aria-label="Pay Cycle Settings"
+                    onClick={handleOpenSettings}
+                  >
+                    <FiSettings />
+                  </IconButton>
+                )}
+
+                <VisibilityToggle isHidden={isHidden} onToggle={toggleVisibility} />
+              </HStack>
+            </HStack>
+          </Flex>
         </Flex>
-      </Card.Root>
 
-      {/* Summary Cards */}
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} gap={4} mb={6}>
-        <Card.Root bg={{ base: 'green.50', _dark: 'green.900' }} borderLeft="4px solid" borderColor="green.500">
-          <Card.Body>
-            <Text fontSize="sm" color={{ base: 'gray.600', _dark: 'gray.300' }} mb={1}>Total Income</Text>
-            <Text fontSize="2xl" fontWeight="bold" color={{ base: 'green.600', _dark: 'green.300' }}>
-              {displayCurrency(currentMonth.total_income)}
-            </Text>
-            <Text fontSize="xs" color={{ base: 'gray.500', _dark: 'gray.400' }} mt={1}>
-              {currentMonth.income_count} transactions
-            </Text>
-          </Card.Body>
-        </Card.Root>
+        {/* Pay Cycle Periods Alert Banner */}
+        {usePayCycle && payCyclePeriods.length > 0 && (
+          <Box
+            mb={6}
+            p={4}
+            borderRadius="2xl"
+            bg={useColorModeValue('blue.50/60', 'blue.950/40')}
+            border="1px solid"
+            borderColor={useColorModeValue('blue.200/60', 'blue.800/60')}
+          >
+            <Flex justify="space-between" align="center" mb={2}>
+              <Flex align="center" gap={2}>
+                <Box w={2} h={2} borderRadius="full" bg="blue.500" />
+                <Text fontSize="xs" fontWeight="700" textTransform="uppercase" letterSpacing="wider" color={useColorModeValue('blue.700', 'blue.300')}>
+                  Active Pay Cycle Periods
+                </Text>
+              </Flex>
+              <Badge colorPalette="blue" variant="subtle" size="sm" borderRadius="full">
+                {userSettings?.pay_cycle_type || 'Custom'}
+              </Badge>
+            </Flex>
+            <SimpleGrid columns={{ base: 1, md: 3 }} gap={3}>
+              {payCyclePeriods.slice(0, 3).map((period, idx) => (
+                <Flex
+                  key={idx}
+                  justify="space-between"
+                  align="center"
+                  p={2.5}
+                  borderRadius="xl"
+                  bg={useColorModeValue('white', 'gray.800')}
+                  border="1px solid"
+                  borderColor={borderColor}
+                >
+                  <Text fontSize="xs" fontWeight="500" color={subtitleColor}>
+                    Period {idx + 1}: {formatDate(period.period_start)} – {formatDate(period.period_end)}
+                  </Text>
+                  <Badge size="xs" colorPalette={period.is_current ? 'green' : 'gray'} variant="subtle" borderRadius="full">
+                    {period.is_current ? 'Current' : 'Completed'}
+                  </Badge>
+                </Flex>
+              ))}
+            </SimpleGrid>
+          </Box>
+        )}
 
-        <Card.Root bg={{ base: 'red.50', _dark: 'red.900' }} borderLeft="4px solid" borderColor="red.500">
-          <Card.Body>
-            <Text fontSize="sm" color={{ base: 'gray.600', _dark: 'gray.300' }} mb={1}>Total Expense</Text>
-            <Text fontSize="2xl" fontWeight="bold" color={{ base: 'red.600', _dark: 'red.300' }}>
-              {displayCurrency(currentMonth.total_expense)}
-            </Text>
-            <Text fontSize="xs" color={{ base: 'gray.500', _dark: 'gray.400' }} mt={1}>
-              {currentMonth.expense_count} transactions
-            </Text>
-          </Card.Body>
-        </Card.Root>
+        {/* Top Summary Metrics */}
+        <SimpleGrid columns={{ base: 1, sm: 2, lg: 4 }} gap={5} mb={8}>
+          {/* Total Income */}
+          <Box
+            bg={cardBg}
+            borderRadius="2xl"
+            border="1px solid"
+            borderColor={borderColor}
+            p={5}
+            shadow="xs"
+          >
+            <Flex justify="space-between" align="flex-start">
+              <Box flex={1}>
+                <Text fontSize="xs" fontWeight="600" textTransform="uppercase" letterSpacing="wider" color={subtitleColor} mb={1.5}>
+                  Total Income
+                </Text>
+                <Text fontSize="2xl" fontWeight="bold" letterSpacing="tight" color={useColorModeValue('green.600', 'green.300')}>
+                  {displayCurrency(currentMonth.total_income)}
+                </Text>
+                <Text fontSize="xs" color={subtitleColor} mt={2}>
+                  {currentMonth.income_count || 0} transactions
+                </Text>
+              </Box>
+              <Flex w={10} h={10} align="center" justify="center" borderRadius="xl" bg={useColorModeValue('green.50', 'green.950/50')}>
+                <FiTrendingUp color="var(--chakra-colors-green-500)" size={20} />
+              </Flex>
+            </Flex>
+          </Box>
 
-        <Card.Root bg={{ base: 'blue.50', _dark: 'blue.900' }} borderLeft="4px solid" borderColor="blue.500">
-          <Card.Body>
-            <Text fontSize="sm" color={{ base: 'gray.600', _dark: 'gray.300' }} mb={1}>Net Amount</Text>
-            <Text fontSize="2xl" fontWeight="bold" color={{ base: 'blue.600', _dark: 'blue.300' }}>
-              {displayCurrency(currentMonth.net_amount)}
-            </Text>
-            <Text fontSize="xs" color={{ base: 'gray.500', _dark: 'gray.400' }} mt={1}>
-              This month
-            </Text>
-          </Card.Body>
-        </Card.Root>
+          {/* Total Expense */}
+          <Box
+            bg={cardBg}
+            borderRadius="2xl"
+            border="1px solid"
+            borderColor={borderColor}
+            p={5}
+            shadow="xs"
+          >
+            <Flex justify="space-between" align="flex-start">
+              <Box flex={1}>
+                <Text fontSize="xs" fontWeight="600" textTransform="uppercase" letterSpacing="wider" color={subtitleColor} mb={1.5}>
+                  Total Expense
+                </Text>
+                <Text fontSize="2xl" fontWeight="bold" letterSpacing="tight" color={useColorModeValue('red.600', 'red.300')}>
+                  {displayCurrency(currentMonth.total_expense)}
+                </Text>
+                <Text fontSize="xs" color={subtitleColor} mt={2}>
+                  {currentMonth.expense_count || 0} transactions
+                </Text>
+              </Box>
+              <Flex w={10} h={10} align="center" justify="center" borderRadius="xl" bg={useColorModeValue('red.50', 'red.950/50')}>
+                <FiTrendingDown color="var(--chakra-colors-red-500)" size={20} />
+              </Flex>
+            </Flex>
+          </Box>
 
-        <Card.Root bg={{ base: 'purple.50', _dark: 'purple.900' }} borderLeft="4px solid" borderColor="purple.500">
-          <Card.Body>
-            <Text fontSize="sm" color={{ base: 'gray.600', _dark: 'gray.300' }} mb={1}>Savings Rate</Text>
-            <Text fontSize="2xl" fontWeight="bold" color={{ base: 'purple.600', _dark: 'purple.300' }}>
-              {displayPercentage(currentMonth.savings_rate)}
-            </Text>
-            <Text fontSize="xs" color={{ base: 'gray.500', _dark: 'gray.400' }} mt={1}>
-              {currentMonth.savings_rate > lastMonth.savings_rate ? '↑' : '↓'} vs last month
-            </Text>
-          </Card.Body>
-        </Card.Root>
-      </SimpleGrid>
+          {/* Net Amount */}
+          <Box
+            bg={cardBg}
+            borderRadius="2xl"
+            border="1px solid"
+            borderColor={borderColor}
+            p={5}
+            shadow="xs"
+          >
+            <Flex justify="space-between" align="flex-start">
+              <Box flex={1}>
+                <Text fontSize="xs" fontWeight="600" textTransform="uppercase" letterSpacing="wider" color={subtitleColor} mb={1.5}>
+                  Net Amount
+                </Text>
+                <Text fontSize="2xl" fontWeight="bold" letterSpacing="tight" color={useColorModeValue((currentMonth.net_amount || 0) >= 0 ? 'blue.600' : 'orange.600', (currentMonth.net_amount || 0) >= 0 ? 'blue.300' : 'orange.300')}>
+                  {displayCurrency(currentMonth.net_amount)}
+                </Text>
+                <Text fontSize="xs" color={subtitleColor} mt={2}>
+                  Active period net balance
+                </Text>
+              </Box>
+              <Flex w={10} h={10} align="center" justify="center" borderRadius="xl" bg={useColorModeValue('blue.50', 'blue.950/50')}>
+                <FiDollarSign color="var(--chakra-colors-blue-500)" size={20} />
+              </Flex>
+            </Flex>
+          </Box>
 
-      <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap={6} mb={6}>
-        {/* Spending by Category */}
-        <Card.Root bg={{ base: 'white', _dark: 'gray.800' }}>
-          <Card.Header>
-            <Heading size="md">Spending by Category</Heading>
-            <Text fontSize="sm" color={{ base: 'gray.500', _dark: 'gray.400' }}>
-              {inputDateRange.start_date || 'All time'} to {inputDateRange.end_date || 'All time'}
-            </Text>
-          </Card.Header>
-          <Card.Body>
+          {/* Savings Rate */}
+          <Box
+            bg={cardBg}
+            borderRadius="2xl"
+            border="1px solid"
+            borderColor={borderColor}
+            p={5}
+            shadow="xs"
+          >
+            <Flex justify="space-between" align="flex-start">
+              <Box flex={1}>
+                <Text fontSize="xs" fontWeight="600" textTransform="uppercase" letterSpacing="wider" color={subtitleColor} mb={1.5}>
+                  Savings Rate
+                </Text>
+                <Text fontSize="2xl" fontWeight="bold" letterSpacing="tight" color={useColorModeValue('purple.600', 'purple.300')}>
+                  {displayPercentage(currentMonth.savings_rate)}
+                </Text>
+                <Flex align="center" gap={1} mt={2}>
+                  <Text fontSize="xs" fontWeight="600" color={currentMonth.savings_rate > lastMonth.savings_rate ? 'green.500' : 'red.500'}>
+                    {currentMonth.savings_rate > lastMonth.savings_rate ? '↑ Higher' : '↓ Lower'}
+                  </Text>
+                  <Text fontSize="xs" color={subtitleColor}>
+                    vs last month
+                  </Text>
+                </Flex>
+              </Box>
+              <Flex w={10} h={10} align="center" justify="center" borderRadius="xl" bg={useColorModeValue('purple.50', 'purple.950/50')}>
+                <FiPieChart color="var(--chakra-colors-purple-500)" size={20} />
+              </Flex>
+            </Flex>
+          </Box>
+        </SimpleGrid>
+
+        {/* Breakdown Row: Spending by Category & Asset */}
+        <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap={6} mb={8}>
+          {/* Spending by Category */}
+          <Box
+            bg={cardBg}
+            borderRadius="2xl"
+            border="1px solid"
+            borderColor={borderColor}
+            p={{ base: 5, md: 6 }}
+            shadow="xs"
+          >
+            <Flex justify="space-between" align="center" mb={6}>
+              <Box>
+                <Heading as="h2" size="sm" fontWeight="700" letterSpacing="tight">
+                  Spending by Category
+                </Heading>
+                <Text color={subtitleColor} fontSize="xs" mt={0.5}>
+                  {inputDateRange.start_date || 'All time'} – {inputDateRange.end_date || 'All time'}
+                </Text>
+              </Box>
+              <Badge colorPalette="blue" variant="subtle" px={2.5} py={0.5} borderRadius="full" fontSize="xs" fontWeight="600">
+                Categories
+              </Badge>
+            </Flex>
+
             {spendingByCategory.length > 0 ? (
-              <Stack gap={3}>
+              <Stack gap={4}>
                 {spendingByCategory.slice(0, 8).map((cat, idx) => (
                   <Box key={idx}>
-                    <Flex justify="space-between" mb={2}>
+                    <Flex justify="space-between" align="center" mb={1.5}>
                       <Flex align="center" gap={2}>
-                        <Text fontWeight="medium">{cat.category_name}</Text>
-                        <Badge size="sm">{cat.count}</Badge>
+                        <Text fontSize="sm" fontWeight="600">{cat.category_name}</Text>
+                        <Badge size="xs" variant="outline" colorPalette="blue">{cat.count} txns</Badge>
                       </Flex>
-                      <Text fontWeight="bold">{displayCurrency(cat.total_amount)}</Text>
+                      <Text fontSize="sm" fontWeight="700">{displayCurrency(cat.total_amount)}</Text>
                     </Flex>
-                    <Box w="100%" bg={{ base: 'gray.200', _dark: 'gray.600' }} h="8px" borderRadius="full" overflow="hidden">
+                    <Box w="100%" bg={useColorModeValue('gray.100', 'gray.700')} h="6px" borderRadius="full" overflow="hidden">
                       <Box
                         bg="blue.500"
                         h="100%"
-                        w={`${cat.percentage}%`}
-                        transition="width 0.3s"
+                        w={`${Math.min(cat.percentage, 100)}%`}
+                        borderRadius="full"
+                        transition="width 0.4s ease-out"
                       />
                     </Box>
-                    <Text fontSize="xs" color={{ base: 'gray.500', _dark: 'gray.400' }} mt={1}>
+                    <Text fontSize="xs" color={subtitleColor} mt={1}>
                       {displayPercentage(cat.percentage)} of total spending
                     </Text>
                   </Box>
                 ))}
               </Stack>
             ) : (
-              <Text color={{ base: 'gray.500', _dark: 'gray.400' }} textAlign="center">No data available</Text>
+              <Text color={subtitleColor} fontSize="sm" textAlign="center" py={8}>
+                No category data available for this range
+              </Text>
             )}
-          </Card.Body>
-        </Card.Root>
+          </Box>
 
-        {/* Spending by Asset */}
-        <Card.Root bg={{ base: 'white', _dark: 'gray.800' }}>
-          <Card.Header>
-            <Heading size="md">Spending by Asset</Heading>
-            <Text fontSize="sm" color={{ base: 'gray.500', _dark: 'gray.400' }}>
-              {inputDateRange.start_date || 'All time'} to {inputDateRange.end_date || 'All time'}
-            </Text>
-          </Card.Header>
-          <Card.Body>
+          {/* Spending by Asset */}
+          <Box
+            bg={cardBg}
+            borderRadius="2xl"
+            border="1px solid"
+            borderColor={borderColor}
+            p={{ base: 5, md: 6 }}
+            shadow="xs"
+          >
+            <Flex justify="space-between" align="center" mb={6}>
+              <Box>
+                <Heading as="h2" size="sm" fontWeight="700" letterSpacing="tight">
+                  Spending by Asset Account
+                </Heading>
+                <Text color={subtitleColor} fontSize="xs" mt={0.5}>
+                  {inputDateRange.start_date || 'All time'} – {inputDateRange.end_date || 'All time'}
+                </Text>
+              </Box>
+              <Badge colorPalette="green" variant="subtle" px={2.5} py={0.5} borderRadius="full" fontSize="xs" fontWeight="600">
+                Assets
+              </Badge>
+            </Flex>
+
             {spendingByBank.length > 0 ? (
-              <Stack gap={3}>
+              <Stack gap={4}>
                 {spendingByBank.map((asset, idx) => (
                   <Box key={idx}>
-                    <Flex justify="space-between" mb={2}>
+                    <Flex justify="space-between" align="center" mb={1.5}>
                       <Flex align="center" gap={2}>
-                        <Text fontWeight="medium">{asset.asset_name}</Text>
-                        <Badge size="sm">{asset.transaction_count} txns</Badge>
-                        <Badge variant="outline" colorPalette="blue" size="sm">{asset.asset_type}</Badge>
+                        <Text fontSize="sm" fontWeight="600">{asset.asset_name}</Text>
+                        <Badge size="xs" variant="subtle" colorPalette="green">{asset.asset_type}</Badge>
                       </Flex>
-                      <Text fontWeight="bold">{displayCurrency(asset.total_expense)}</Text>
+                      <Text fontSize="sm" fontWeight="700">{displayCurrency(asset.total_expense)}</Text>
                     </Flex>
-                    <Box w="100%" bg={{ base: 'gray.200', _dark: 'gray.600' }} h="8px" borderRadius="full" overflow="hidden">
+                    <Box w="100%" bg={useColorModeValue('gray.100', 'gray.700')} h="6px" borderRadius="full" overflow="hidden">
                       <Box
                         bg="green.500"
                         h="100%"
-                        w={`${asset.percentage}%`}
-                        transition="width 0.3s"
+                        w={`${Math.min(asset.percentage, 100)}%`}
+                        borderRadius="full"
+                        transition="width 0.4s ease-out"
                       />
                     </Box>
-                    <Flex justify="space-between" mt={1}>
-                      <Text fontSize="xs" color={{ base: 'gray.500', _dark: 'gray.400' }}>
-                        {displayPercentage(asset.percentage)} of total spending
+                    <Flex justify="space-between" align="center" mt={1}>
+                      <Text fontSize="xs" color={subtitleColor}>
+                        {displayPercentage(asset.percentage)} of total spending ({asset.transaction_count} txns)
                       </Text>
-                      <Text fontSize="xs" color={asset.net_amount >= 0 ? "green.500" : "red.500"}>
+                      <Text fontSize="xs" fontWeight="600" color={asset.net_amount >= 0 ? "green.600" : "red.600"}>
                         Net: {displayCurrency(asset.net_amount)}
                       </Text>
                     </Flex>
@@ -518,164 +670,231 @@ export default function Financials() {
                 ))}
               </Stack>
             ) : (
-              <Text color={{ base: 'gray.500', _dark: 'gray.400' }} textAlign="center">No data available</Text>
+              <Text color={subtitleColor} fontSize="sm" textAlign="center" py={8}>
+                No asset account data available for this range
+              </Text>
             )}
-          </Card.Body>
-        </Card.Root>
-      </Grid>
+          </Box>
+        </Grid>
 
-      {/* Spending by Tag */}
-      <Card.Root mb={6} bg={{ base: 'white', _dark: 'gray.800' }}>
-        <Card.Header>
-          <Heading size="md">Spending by Tag</Heading>
-          <Text fontSize="sm" color={{ base: 'gray.500', _dark: 'gray.400' }}>
-            {inputDateRange.start_date || 'All time'} to {inputDateRange.end_date || 'All time'}
-          </Text>
-        </Card.Header>
-        <Card.Body>
+        {/* Spending by Tag */}
+        <Box
+          bg={cardBg}
+          borderRadius="2xl"
+          border="1px solid"
+          borderColor={borderColor}
+          p={{ base: 5, md: 6 }}
+          shadow="xs"
+          mb={8}
+        >
+          <Flex justify="space-between" align="center" mb={6}>
+            <Box>
+              <Heading as="h2" size="sm" fontWeight="700" letterSpacing="tight">
+                Spending by Tag
+              </Heading>
+              <Text color={subtitleColor} fontSize="xs" mt={0.5}>
+                Tag-based expense classification and breakdown
+              </Text>
+            </Box>
+            <Badge colorPalette="purple" variant="subtle" px={2.5} py={0.5} borderRadius="full" fontSize="xs" fontWeight="600">
+              Tags
+            </Badge>
+          </Flex>
+
           {spendingByTag.length > 0 ? (
             <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={4}>
               {spendingByTag.map((tag, idx) => (
-                <Box key={idx} p={4} bg={{ base: 'gray.50', _dark: 'gray.700' }} borderRadius="md" border="1px solid" borderColor={{ base: 'gray.200', _dark: 'gray.600' }}>
+                <Box
+                  key={idx}
+                  p={4}
+                  borderRadius="xl"
+                  bg={useColorModeValue('gray.50/80', 'gray.900/60')}
+                  border="1px solid"
+                  borderColor={borderColor}
+                >
                   <Flex align="center" gap={3} mb={3}>
-                    {tag.icon && <Text fontSize="2xl">{tag.icon}</Text>}
+                    {tag.icon && <Text fontSize="xl">{tag.icon}</Text>}
                     <Box flex={1}>
-                      <Text fontWeight="bold" color={{ base: 'gray.800', _dark: 'white' }}>{tag.name}</Text>
-                      <Text fontSize="xs" color="gray.500">{tag.transaction_count} transactions</Text>
+                      <Text fontWeight="700" fontSize="sm">{tag.name}</Text>
+                      <Text fontSize="xs" color={subtitleColor}>{tag.transaction_count} transactions</Text>
                     </Box>
                     <Box
-                      w="8"
-                      h="8"
+                      w="10px"
+                      h="10px"
                       borderRadius="full"
-                      bg={tag.color}
-                      border="2px solid"
-                      borderColor={{ base: 'white', _dark: 'gray.600' }}
+                      bg={tag.color || 'purple.500'}
                     />
                   </Flex>
-                  <VStack gap={2} align="start">
-                    <Flex justify="space-between" w="full">
-                      <Text fontSize="sm" color="gray.500">Total Spending</Text>
-                      <Text fontWeight="bold" fontSize="lg" color={{ base: 'gray.800', _dark: 'white' }}>{displayCurrency(tag.total_spending)}</Text>
+                  <VStack gap={1.5} align="stretch">
+                    <Flex justify="space-between" align="center">
+                      <Text fontSize="xs" color={subtitleColor}>Total Spending</Text>
+                      <Text fontWeight="700" fontSize="sm">{displayCurrency(tag.total_spending)}</Text>
                     </Flex>
-                    <Flex justify="space-between" w="full">
-                      <Text fontSize="sm" color="gray.500">Average</Text>
-                      <Text fontSize="sm" color={{ base: 'gray.700', _dark: 'gray.300' }}>{displayCurrency(tag.average_amount)}</Text>
+                    <Flex justify="space-between" align="center">
+                      <Text fontSize="xs" color={subtitleColor}>Average / Txn</Text>
+                      <Text fontSize="xs" fontWeight="500">{displayCurrency(tag.average_amount)}</Text>
                     </Flex>
-                    <Box w="100%" bg={{ base: 'gray.200', _dark: 'gray.600' }} h="6px" borderRadius="full" overflow="hidden">
+                    <Box w="100%" bg={useColorModeValue('gray.200', 'gray.700')} h="5px" borderRadius="full" overflow="hidden" mt={1}>
                       <Box
-                        bg={tag.color}
+                        bg={tag.color || 'purple.500'}
                         h="100%"
-                        w={`${tag.percentage}%`}
-                        transition="width 0.3s"
+                        w={`${Math.min(tag.percentage, 100)}%`}
+                        borderRadius="full"
                       />
                     </Box>
-                    <Text fontSize="xs" color="gray.500">{displayPercentage(tag.percentage)} of total spending</Text>
+                    <Text fontSize="xs" color={subtitleColor} mt={0.5}>
+                      {displayPercentage(tag.percentage)} of total spending
+                    </Text>
                   </VStack>
                 </Box>
               ))}
             </SimpleGrid>
           ) : (
-            <Text color={{ base: 'gray.500', _dark: 'gray.400' }} textAlign="center">No tagged transactions yet</Text>
+            <Text color={subtitleColor} fontSize="sm" textAlign="center" py={6}>
+              No tagged transactions recorded yet
+            </Text>
           )}
-        </Card.Body>
-      </Card.Root>
+        </Box>
 
-      {/* Budget Summary */}
-      {budgetSummary.total_budgets > 0 && (
-        <Card.Root mb={6} bg={{ base: 'white', _dark: 'gray.800' }}>
-          <Card.Header>
-            <Heading size="md">Budget Overview</Heading>
-          </Card.Header>
-          <Card.Body>
-            <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
-              <Box textAlign="center" p={4} bg={{ base: 'gray.50', _dark: 'gray.700' }} borderRadius="md">
-                <Text fontSize="sm" color={{ base: 'gray.600', _dark: 'gray.300' }}>Active Budgets</Text>
-                <Text fontSize="3xl" fontWeight="bold" color={{ base: 'blue.600', _dark: 'blue.300' }}>
+        {/* Budget Overview */}
+        {budgetSummary.total_budgets > 0 && (
+          <Box
+            bg={cardBg}
+            borderRadius="2xl"
+            border="1px solid"
+            borderColor={borderColor}
+            p={{ base: 5, md: 6 }}
+            shadow="xs"
+            mb={8}
+          >
+            <Flex justify="space-between" align="center" mb={6}>
+              <Box>
+                <Heading as="h2" size="sm" fontWeight="700" letterSpacing="tight">
+                  Budget Utilization
+                </Heading>
+                <Text color={subtitleColor} fontSize="xs" mt={0.5}>
+                  Overall spending against set budget targets
+                </Text>
+              </Box>
+              <Badge colorPalette="orange" variant="subtle" px={2.5} py={0.5} borderRadius="full" fontSize="xs" fontWeight="600">
+                Budgets
+              </Badge>
+            </Flex>
+
+            <SimpleGrid columns={{ base: 1, md: 3 }} gap={4} mb={6}>
+              <Box textAlign="center" p={4} bg={useColorModeValue('blue.50/50', 'blue.950/40')} borderRadius="xl" border="1px solid" borderColor={useColorModeValue('blue.100', 'blue.900')}>
+                <Text fontSize="xs" fontWeight="600" textTransform="uppercase" letterSpacing="wider" color={useColorModeValue('blue.600', 'blue.300')}>Active Budgets</Text>
+                <Text fontSize="2xl" fontWeight="800" color={useColorModeValue('blue.700', 'blue.200')} mt={1}>
                   {budgetSummary.active_budgets}
                 </Text>
               </Box>
-              <Box textAlign="center" p={4} bg={{ base: 'orange.50', _dark: 'orange.900' }} borderRadius="md">
-                <Text fontSize="sm" color={{ base: 'gray.600', _dark: 'gray.300' }}>Warning</Text>
-                <Text fontSize="3xl" fontWeight="bold" color={{ base: 'orange.600', _dark: 'orange.300' }}>
+              <Box textAlign="center" p={4} bg={useColorModeValue('orange.50/50', 'orange.950/40')} borderRadius="xl" border="1px solid" borderColor={useColorModeValue('orange.100', 'orange.900')}>
+                <Text fontSize="xs" fontWeight="600" textTransform="uppercase" letterSpacing="wider" color={useColorModeValue('orange.600', 'orange.300')}>Warning Threshold</Text>
+                <Text fontSize="2xl" fontWeight="800" color={useColorModeValue('orange.700', 'orange.200')} mt={1}>
                   {budgetSummary.warning_budgets}
                 </Text>
               </Box>
-              <Box textAlign="center" p={4} bg={{ base: 'red.50', _dark: 'red.900' }} borderRadius="md">
-                <Text fontSize="sm" color={{ base: 'gray.600', _dark: 'gray.300' }}>Exceeded</Text>
-                <Text fontSize="3xl" fontWeight="bold" color={{ base: 'red.600', _dark: 'red.300' }}>
+              <Box textAlign="center" p={4} bg={useColorModeValue('red.50/50', 'red.950/40')} borderRadius="xl" border="1px solid" borderColor={useColorModeValue('red.100', 'red.900')}>
+                <Text fontSize="xs" fontWeight="600" textTransform="uppercase" letterSpacing="wider" color={useColorModeValue('red.600', 'red.300')}>Exceeded Limits</Text>
+                <Text fontSize="2xl" fontWeight="800" color={useColorModeValue('red.700', 'red.200')} mt={1}>
                   {budgetSummary.exceeded_budgets}
                 </Text>
               </Box>
             </SimpleGrid>
-            <Box mt={4}>
-              <Flex justify="space-between" mb={2}>
-                <Text fontWeight="medium">Overall Budget Utilization</Text>
-                <Text fontWeight="bold">{displayPercentage(budgetSummary.average_utilization)}</Text>
+
+            <Box>
+              <Flex justify="space-between" align="center" mb={2}>
+                <Text fontSize="sm" fontWeight="600">Overall Budget Utilization</Text>
+                <Text fontSize="sm" fontWeight="800">{displayPercentage(budgetSummary.average_utilization)}</Text>
               </Flex>
-              <Box w="100%" bg={{ base: 'gray.200', _dark: 'gray.600' }} h="12px" borderRadius="full" overflow="hidden">
+              <Box w="100%" bg={useColorModeValue('gray.100', 'gray.700')} h="8px" borderRadius="full" overflow="hidden">
                 <Box
                   bg={budgetSummary.average_utilization > 90 ? 'red.500' : budgetSummary.average_utilization > 80 ? 'orange.500' : 'green.500'}
                   h="100%"
                   w={`${Math.min(budgetSummary.average_utilization, 100)}%`}
-                  transition="width 0.3s"
+                  borderRadius="full"
+                  transition="width 0.4s ease-out"
                 />
               </Box>
-              <Flex justify="space-between" mt={2} fontSize="sm" color={{ base: 'gray.600', _dark: 'gray.400' }}>
+              <Flex justify="space-between" mt={2} fontSize="xs" color={subtitleColor}>
                 <Text>Spent: {displayCurrency(budgetSummary.total_spent)}</Text>
                 <Text>Budgeted: {displayCurrency(budgetSummary.total_budgeted)}</Text>
               </Flex>
             </Box>
-          </Card.Body>
-        </Card.Root>
-      )}
+          </Box>
+        )}
 
-      {/* Monthly Comparison */}
-      <Card.Root bg={{ base: 'white', _dark: 'gray.800' }}>
-        <Card.Header>
-          <Heading size="md">{usePayCycle ? 'Pay Cycle Trend' : '6-Month Trend'}</Heading>
-          <Text fontSize="sm" color={{ base: 'gray.500', _dark: 'gray.400' }}>
-            {usePayCycle ? 'Income vs Expense by pay cycle period' : 'Income vs Expense comparison'}
-          </Text>
-        </Card.Header>
-        <Card.Body>
+        {/* Monthly Comparison / Pay Cycle Trend */}
+        <Box
+          bg={cardBg}
+          borderRadius="2xl"
+          border="1px solid"
+          borderColor={borderColor}
+          p={{ base: 5, md: 6 }}
+          shadow="xs"
+          mb={8}
+        >
+          <Flex justify="space-between" align="center" mb={6}>
+            <Box>
+              <Heading as="h2" size="sm" fontWeight="700" letterSpacing="tight">
+                {usePayCycle ? 'Pay Cycle Trend History' : 'Monthly Performance Trend'}
+              </Heading>
+              <Text color={subtitleColor} fontSize="xs" mt={0.5}>
+                {usePayCycle ? 'Income vs Expense per pay cycle period' : 'Historical income and expense comparisons'}
+              </Text>
+            </Box>
+            <Badge colorPalette="blue" variant="subtle" px={2.5} py={0.5} borderRadius="full" fontSize="xs" fontWeight="600">
+              History
+            </Badge>
+          </Flex>
+
           {monthlyComparison.length > 0 ? (
-            <Stack gap={4}>
+            <Stack gap={3}>
               {monthlyComparison.map((month, idx) => (
-                <Box key={idx} p={3} bg={{ base: 'gray.50', _dark: 'gray.700' }} borderRadius="md">
-                  <Flex justify="space-between" mb={3}>
-                    <Text fontWeight="bold" fontSize="lg">
-                      {usePayCycle && month.period_label 
-                        ? month.period_label 
-                        : formatMonth(month.month)}
-                    </Text>
-                    <Badge colorScheme={month.net >= 0 ? 'green' : 'red'}>
-                      {displayCurrency(month.net)}
+                <Box
+                  key={idx}
+                  p={4}
+                  borderRadius="xl"
+                  bg={useColorModeValue('gray.50/60', 'gray.900/40')}
+                  border="1px solid"
+                  borderColor={borderColor}
+                >
+                  <Flex justify="space-between" align="center" mb={2}>
+                    <Box>
+                      <Text fontWeight="700" fontSize="sm">
+                        {usePayCycle && month.period_label
+                          ? month.period_label
+                          : formatMonth(month.month)}
+                      </Text>
+                      {usePayCycle && month.period_start && month.period_end && (
+                        <Text fontSize="xs" color={subtitleColor}>
+                          {formatDate(month.period_start)} – {formatDate(month.period_end)}
+                        </Text>
+                      )}
+                    </Box>
+                    <Badge colorPalette={month.net >= 0 ? 'green' : 'red'} variant="subtle" size="sm" borderRadius="full">
+                      Net: {displayCurrency(month.net)}
                     </Badge>
                   </Flex>
-                  {usePayCycle && month.period_start && month.period_end && (
-                    <Text fontSize="xs" color={{ base: 'gray.500', _dark: 'gray.400' }} mb={3}>
-                      {formatDate(month.period_start)} - {formatDate(month.period_end)}
-                    </Text>
-                  )}
-                  <Grid templateColumns="1fr 1fr" gap={3}>
+                  <Grid templateColumns="1fr 1fr" gap={4} mt={3}>
                     <Box>
-                      <Text fontSize="sm" color={{ base: 'gray.600', _dark: 'gray.400' }}>Income</Text>
-                      <Text fontWeight="bold" color={{ base: 'green.600', _dark: 'green.300' }}>
+                      <Text fontSize="xs" color={subtitleColor}>Income</Text>
+                      <Text fontWeight="700" fontSize="sm" color={useColorModeValue('green.600', 'green.300')}>
                         {displayCurrency(month.income)}
                       </Text>
                       {month.income_change !== 0 && (
-                        <Text fontSize="xs" color={month.income_change > 0 ? 'green.500' : 'red.500'}>
+                        <Text fontSize="xs" fontWeight="500" color={month.income_change > 0 ? 'green.500' : 'red.500'}>
                           {month.income_change > 0 ? '↑' : '↓'} {formatValue(Math.abs(month.income_change), (v) => `${v.toFixed(1)}%`)}
                         </Text>
                       )}
                     </Box>
                     <Box>
-                      <Text fontSize="sm" color={{ base: 'gray.600', _dark: 'gray.400' }}>Expense</Text>
-                      <Text fontWeight="bold" color={{ base: 'red.600', _dark: 'red.300' }}>
+                      <Text fontSize="xs" color={subtitleColor}>Expense</Text>
+                      <Text fontWeight="700" fontSize="sm" color={useColorModeValue('red.600', 'red.300')}>
                         {displayCurrency(month.expense)}
                       </Text>
                       {month.expense_change !== 0 && (
-                        <Text fontSize="xs" color={month.expense_change > 0 ? 'red.500' : 'green.500'}>
+                        <Text fontSize="xs" fontWeight="500" color={month.expense_change > 0 ? 'red.500' : 'green.500'}>
                           {month.expense_change > 0 ? '↑' : '↓'} {formatValue(Math.abs(month.expense_change), (v) => `${v.toFixed(1)}%`)}
                         </Text>
                       )}
@@ -685,153 +904,168 @@ export default function Financials() {
               ))}
             </Stack>
           ) : (
-            <Text color={{ base: 'gray.500', _dark: 'gray.400' }} textAlign="center">No data available</Text>
+            <Text color={subtitleColor} fontSize="sm" textAlign="center" py={6}>
+              No historical trend data available
+            </Text>
           )}
-        </Card.Body>
-      </Card.Root>
+        </Box>
 
-      {/* Top Categories */}
-      {dashboardData?.top_categories && dashboardData.top_categories.length > 0 && (
-        <Card.Root mt={6} bg={{ base: 'white', _dark: 'gray.800' }}>
-          <Card.Header>
-            <Heading size="md">
-              Top Spending Categories ({usePayCycle ? 'This Period' : 'This Month'})
-            </Heading>
-            {usePayCycle && dashboardData.period_start && dashboardData.period_end && (
-              <Text fontSize="sm" color={{ base: 'gray.500', _dark: 'gray.400' }}>
-                {formatDate(dashboardData.period_start)} - {formatDate(dashboardData.period_end)}
-              </Text>
-            )}
-          </Card.Header>
-          <Card.Body>
+        {/* Top Spending Categories List */}
+        {dashboardData?.top_categories && dashboardData.top_categories.length > 0 && (
+          <Box
+            bg={cardBg}
+            borderRadius="2xl"
+            border="1px solid"
+            borderColor={borderColor}
+            p={{ base: 5, md: 6 }}
+            shadow="xs"
+          >
+            <Flex justify="space-between" align="center" mb={6}>
+              <Box>
+                <Heading as="h2" size="sm" fontWeight="700" letterSpacing="tight">
+                  Top Spending Categories ({usePayCycle ? 'This Period' : 'This Month'})
+                </Heading>
+                {usePayCycle && dashboardData.period_start && dashboardData.period_end && (
+                  <Text fontSize="xs" color={subtitleColor} mt={0.5}>
+                    {formatDate(dashboardData.period_start)} – {formatDate(dashboardData.period_end)}
+                  </Text>
+                )}
+              </Box>
+              <Badge colorPalette="blue" variant="subtle" px={2.5} py={0.5} borderRadius="full" fontSize="xs" fontWeight="600">
+                Top Categories
+              </Badge>
+            </Flex>
+
             <Stack gap={3}>
               {dashboardData.top_categories.slice(0, 5).map((cat, idx) => (
-                <Flex key={idx} justify="space-between" align="center" p={3} bg={{ base: 'gray.50', _dark: 'gray.700' }} borderRadius="md">
+                <Flex
+                  key={idx}
+                  justify="space-between"
+                  align="center"
+                  p={3.5}
+                  borderRadius="xl"
+                  bg={useColorModeValue('gray.50/60', 'gray.900/40')}
+                  border="1px solid"
+                  borderColor={borderColor}
+                >
                   <Flex align="center" gap={3}>
-                    <Box
-                      w="40px"
-                      h="40px"
-                      bg={`hsl(${idx * 60}, 70%, 60%)`}
-                      borderRadius="full"
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                      fontWeight="bold"
-                      color="white"
+                    <Badge
+                      size="md"
+                      variant="solid"
+                      colorPalette={idx === 0 ? 'amber' : idx === 1 ? 'gray' : 'blue'}
+                      borderRadius="lg"
+                      px={2.5}
+                      py={1}
+                      fontWeight="700"
                     >
-                      {idx + 1}
-                    </Box>
+                      #{idx + 1}
+                    </Badge>
                     <Box>
-                      <Text fontWeight="medium" color={{ base: 'gray.800', _dark: 'white' }}>{cat.category_name}</Text>
-                      <Text fontSize="sm" color={{ base: 'gray.600', _dark: 'gray.400' }}>{cat.count} transactions</Text>
+                      <Text fontWeight="700" fontSize="sm">{cat.category_name}</Text>
+                      <Text fontSize="xs" color={subtitleColor}>{cat.count} transactions</Text>
                     </Box>
                   </Flex>
                   <Box textAlign="right">
-                    <Text fontWeight="bold" color={{ base: 'gray.800', _dark: 'white' }}>{displayCurrency(cat.total_amount)}</Text>
-                    <Text fontSize="sm" color={{ base: 'gray.600', _dark: 'gray.400' }}>{displayPercentage(cat.percentage)}</Text>
+                    <Text fontWeight="800" fontSize="sm">{displayCurrency(cat.total_amount)}</Text>
+                    <Text fontSize="xs" color={subtitleColor}>{displayPercentage(cat.percentage)} of total</Text>
                   </Box>
                 </Flex>
               ))}
             </Stack>
-          </Card.Body>
-        </Card.Root>
-      )}
-
-      {/* Bottom Sheet for Mobile Pay Cycle Toggle */}
-      <BottomSheet
-        isOpen={isBottomSheetOpen}
-        onClose={handleCloseSettings}
-        title="Pay Cycle Settings"
-      >
-        <VStack gap={6} align="stretch">
-          <Box>
-            <Text fontWeight="bold" mb={2}>Pay Cycle Type</Text>
-            <Badge colorScheme="blue" size="md">
-              {userSettings?.pay_cycle_type}
-            </Badge>
           </Box>
+        )}
 
-          <Box>
-            <Flex justify="space-between" align="center">
-              <Box>
-                <Text fontWeight="bold">Use Pay Cycle for Analytics</Text>
-                <Text fontSize="sm" color="gray.500">
-                  Apply your custom pay cycle to all analytics views
-                </Text>
-              </Box>
-              <ChakraSwitch.Root
-                checked={usePayCycle}
-                onCheckedChange={(details) => handleTogglePayCycle(details)}
-                colorPalette="blue"
-                size="lg"
-              >
-                <ChakraSwitch.HiddenInput />
-                <ChakraSwitch.Control>
-                  <ChakraSwitch.Thumb />
-                </ChakraSwitch.Control>
-              </ChakraSwitch.Root>
-            </Flex>
-          </Box>
-
-          {usePayCycle && payCyclePeriods.length > 0 && (
-            <Box>
-              <Text fontWeight="bold" mb={2}>Current Period</Text>
-              <VStack gap={2} align="stretch" bg="gray.50" p={4} borderRadius="md">
-                {payCyclePeriods.slice(0, 2).map((period, idx) => (
-                  <Flex key={idx} justify="space-between" align="center">
-                    <Text fontSize="sm">
-                      {formatDate(period.period_start)} - {formatDate(period.period_end)}
-                    </Text>
-                    <Badge colorScheme={period.is_current ? 'green' : 'gray'} size="sm">
-                      {period.is_current ? 'Current' : 'Previous'}
-                    </Badge>
-                  </Flex>
-                ))}
-              </VStack>
-            </Box>
-          )}
-
-          <Button
-            onClick={handleCloseSettings}
-            bg="blue.500"
-            color="white"
-            _hover={{ bg: 'blue.600' }}
-            width="full"
-          >
-            Close
-          </Button>
-
-          <Button
-            as="a"
-            href="/settings/pay-cycle"
-            variant="outline"
-            width="full"
-            leftIcon={<FiRefreshCw />}
-          >
-            Configure Pay Cycle
-          </Button>
-        </VStack>
-      </BottomSheet>
-
-      {/* Floating Action Button for Mobile */}
-      {isMobile && userSettings && (
-        <IconButton
-          onClick={handleOpenSettings}
-          position="fixed"
-          bottom={6}
-          right={6}
-          size="lg"
-          borderRadius="full"
-          shadow="lg"
-          bg="blue.500"
-          color="white"
-          _hover={{ bg: 'blue.600' }}
-          aria-label="Pay Cycle Settings"
-          zIndex="sticky"
+        {/* Bottom Sheet for Mobile Pay Cycle Toggle */}
+        <BottomSheet
+          isOpen={isBottomSheetOpen}
+          onClose={handleCloseSettings}
+          title="Pay Cycle Settings"
         >
-          <FiSettings />
-        </IconButton>
-      )}
+          <VStack gap={6} align="stretch">
+            <Box>
+              <Text fontWeight="bold" mb={2}>Pay Cycle Type</Text>
+              <Badge colorPalette="blue" size="md">
+                {userSettings?.pay_cycle_type}
+              </Badge>
+            </Box>
+
+            <Box>
+              <Flex justify="space-between" align="center">
+                <Box>
+                  <Text fontWeight="bold">Use Pay Cycle for Analytics</Text>
+                  <Text fontSize="sm" color="gray.500">
+                    Apply your custom pay cycle to all analytics views
+                  </Text>
+                </Box>
+                <ChakraSwitch.Root
+                  checked={usePayCycle}
+                  onCheckedChange={(details) => handleTogglePayCycle(details)}
+                  colorPalette="blue"
+                  size="lg"
+                >
+                  <ChakraSwitch.HiddenInput />
+                  <ChakraSwitch.Control>
+                    <ChakraSwitch.Thumb />
+                  </ChakraSwitch.Control>
+                </ChakraSwitch.Root>
+              </Flex>
+            </Box>
+
+            {usePayCycle && payCyclePeriods.length > 0 && (
+              <Box>
+                <Text fontWeight="bold" mb={2}>Current Period</Text>
+                <VStack gap={2} align="stretch" bg="gray.50" p={4} borderRadius="md">
+                  {payCyclePeriods.slice(0, 2).map((period, idx) => (
+                    <Flex key={idx} justify="space-between" align="center">
+                      <Text fontSize="sm">
+                        {formatDate(period.period_start)} – {formatDate(period.period_end)}
+                      </Text>
+                      <Badge colorPalette={period.is_current ? 'green' : 'gray'} size="sm">
+                        {period.is_current ? 'Current' : 'Previous'}
+                      </Badge>
+                    </Flex>
+                  ))}
+                </VStack>
+              </Box>
+            )}
+
+            <Button
+              onClick={handleCloseSettings}
+              colorPalette="blue"
+              width="full"
+            >
+              Close
+            </Button>
+
+            <Button
+              as="a"
+              href="/settings/pay-cycle"
+              variant="outline"
+              width="full"
+            >
+              Configure Pay Cycle
+            </Button>
+          </VStack>
+        </BottomSheet>
+
+        {/* Floating Action Button for Mobile */}
+        {isMobile && userSettings && (
+          <IconButton
+            onClick={handleOpenSettings}
+            position="fixed"
+            bottom={6}
+            right={6}
+            size="lg"
+            borderRadius="full"
+            shadow="lg"
+            colorPalette="blue"
+            aria-label="Pay Cycle Settings"
+            zIndex="sticky"
+          >
+            <FiSettings />
+          </IconButton>
+        )}
+      </Box>
     </Box>
   );
 }
