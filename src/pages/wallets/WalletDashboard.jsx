@@ -7,10 +7,8 @@ import {
   VStack,
   HStack,
   Grid,
-  Card,
   Spinner,
   Flex,
-  Icon,
   SimpleGrid,
   Badge,
 } from '@chakra-ui/react';
@@ -34,7 +32,10 @@ const WalletDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [summaryLoading, setSummaryLoading] = useState(true);
 
+  const pageBg = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
+  const borderColor = useColorModeValue('gray.100', 'gray.700');
+  const subtitleColor = useColorModeValue('gray.600', 'gray.400');
 
   // Value visibility hook
   const { isHidden, toggleVisibility, formatValue } = useLocalValueVisibility();
@@ -117,140 +118,217 @@ const WalletDashboard = () => {
     }
   };
 
-
-
   const formatCurrency = (amount, currency) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: currency || 'IDR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount);
   };
 
   return (
-    <Box maxW="7xl" mx="auto" px={4} py={6}>
-      <VStack gap={6} align="stretch">
-        {/* Header */}
-        <Flex justify="space-between" align="center">
+    <Box minH="100vh" bg={pageBg}>
+      <Box maxW="7xl" mx="auto" px={{ base: 4, sm: 6, lg: 8 }} py={8}>
+        {/* Hero Header */}
+        <Flex
+          justify="space-between"
+          align={{ base: 'flex-start', sm: 'center' }}
+          direction={{ base: 'column', sm: 'row' }}
+          gap={4}
+          mb={8}
+          pb={6}
+          borderBottom="1px solid"
+          borderColor={borderColor}
+        >
           <Box>
-            <Heading as="h1" size="xl" mb={2}>
-              Wallet Management
+            <Flex align="center" gap={2} mb={2}>
+              <Box w={2} h={2} borderRadius="full" bg="blue.500" />
+              <Text fontSize="xs" fontWeight="600" textTransform="uppercase" letterSpacing="widest" color={subtitleColor}>
+                Asset Infrastructure
+              </Text>
+            </Flex>
+            <Heading as="h5" size={{ base: 'xl', md: '2xl' }} fontWeight="800" letterSpacing="tight" mb={1.5}>
+              Wallet Infrastructure
             </Heading>
-            <Text color="gray.600" _dark={{ color: 'gray.400' }}>
-              Manage your assets and track balances across different accounts
+            <Text color={subtitleColor} fontSize="md">
+              Manage your accounts, track multi-currency balances, and monitor asset distribution.
             </Text>
           </Box>
-          <HStack gap={2}>
+
+          <HStack gap={3}>
             <VisibilityToggle isHidden={isHidden} onToggle={toggleVisibility} />
             <Button
-              colorPalette="blue"
-              size="lg"
               onClick={handleCreateWallet}
-              leftIcon={<FiPlus />}
+              bg="blue.500"
+              color="white"
+              _hover={{ bg: "blue.600" }}
+              size="md"
+              borderRadius="xl"
+              px={5}
+              fontWeight="600"
+              boxShadow="xs"
             >
+              <FiPlus style={{ marginRight: '6px' }} />
               Add Wallet
             </Button>
           </HStack>
         </Flex>
 
-        {/* Summary Stats */}
+        {/* Currency Summary Metric Cards */}
         {summaryLoading ? (
           <Flex justify="center" py={8}>
             <Spinner size="xl" color="blue.500" />
           </Flex>
         ) : (
-          <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={6}>
+          <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={5} mb={8}>
             {Object.entries(summary).map(([currency, total]) => (
-              <Card.Root key={currency} bg={cardBg} p={6}>
-                <Card.Body>
-                  <HStack justify="space-between" align="start">
-                    <Box>
-                      <Text fontSize="sm" color="gray.600" mb={1}>
-                        Total {currency}
-                      </Text>
-                      <Text fontSize="2xl" fontWeight="bold">
-                        {displayCurrency(total, currency)}
-                      </Text>
-                    </Box>
-                    <Icon as={FiTrendingUp} boxSize={8} color="green.500" />
-                  </HStack>
-                </Card.Body>
-              </Card.Root>
+              <Box
+                key={currency}
+                bg={cardBg}
+                borderRadius="2xl"
+                border="1px solid"
+                borderColor={borderColor}
+                p={5}
+                shadow="xs"
+              >
+                <Flex justify="space-between" align="flex-start">
+                  <Box flex={1}>
+                    <Text fontSize="xs" fontWeight="600" textTransform="uppercase" letterSpacing="wider" color={subtitleColor} mb={1.5}>
+                      Total {currency}
+                    </Text>
+                    <Text fontSize="2xl" fontWeight="bold" letterSpacing="tight">
+                      {displayCurrency(total, currency)}
+                    </Text>
+                    <Text fontSize="xs" color={subtitleColor} mt={2}>
+                      Liquid balance in {currency}
+                    </Text>
+                  </Box>
+                  <Flex w={10} h={10} align="center" justify="center" borderRadius="xl" bg={useColorModeValue('green.50', 'green.950/50')}>
+                    <FiTrendingUp color="var(--chakra-colors-green-500)" size={20} />
+                  </Flex>
+                </Flex>
+              </Box>
             ))}
           </SimpleGrid>
         )}
 
-        {/* Chart and List */}
-        <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap={6}>
-          {/* Summary Chart */}
-          <Card.Root bg={cardBg}>
-            <Card.Header>
-              <Heading size="md">Balance by Currency</Heading>
-            </Card.Header>
-            <Card.Body>
-              {summaryLoading ? (
-                <Flex justify="center" py={8}>
-                  <Spinner size="lg" color="blue.500" />
-                </Flex>
-              ) : (
-                <WalletSummaryChart data={summary} />
-              )}
-            </Card.Body>
-          </Card.Root>
-
-          {/* Quick Stats */}
-          <Card.Root bg={cardBg}>
-            <Card.Header>
-              <Heading size="md">Quick Stats</Heading>
-            </Card.Header>
-            <Card.Body>
-              <VStack align="stretch" gap={4}>
-                <HStack justify="space-between">
-                  <Text>Total Wallets</Text>
-                  <Badge colorPalette="blue" variant="subtle">
-                    {wallets.length}
-                  </Badge>
-                </HStack>
-                <HStack justify="space-between">
-                  <Text>Active Currencies</Text>
-                  <Badge colorPalette="green" variant="subtle">
-                    {Object.keys(summary).length}
-                  </Badge>
-                </HStack>
-                <HStack justify="space-between">
-                  <Text>Total Balance</Text>
-                  <Text fontWeight="bold">
-                    {displayNumber(Object.values(summary).reduce((sum, val) => sum + val, 0))}
-                  </Text>
-                </HStack>
-              </VStack>
-            </Card.Body>
-          </Card.Root>
-        </Grid>
-
-        {/* Wallet List */}
-        <Card.Root bg={cardBg}>
-          <Card.Header>
-            <Flex justify="space-between" align="center">
-              <Heading size="md">Your Wallets</Heading>
-              <VisibilityToggle isHidden={isHidden} onToggle={toggleVisibility} />
+        {/* Chart & Quick Stats Row */}
+        <Grid templateColumns={{ base: '1fr', lg: '7fr 5fr' }} gap={6} mb={8}>
+          {/* Balance by Currency Chart */}
+          <Box
+            bg={cardBg}
+            borderRadius="2xl"
+            border="1px solid"
+            borderColor={borderColor}
+            p={{ base: 5, md: 6 }}
+            shadow="xs"
+          >
+            <Flex justify="space-between" align="center" mb={6}>
+              <Box>
+                <Heading as="h2" size="sm" fontWeight="700" letterSpacing="tight">
+                  Balance by Currency
+                </Heading>
+                <Text color={subtitleColor} fontSize="xs" mt={0.5}>
+                  Currency distribution across active wallets
+                </Text>
+              </Box>
+              <Badge colorPalette="blue" variant="subtle" px={2.5} py={0.5} borderRadius="full" fontSize="xs" fontWeight="600">
+                Currencies
+              </Badge>
             </Flex>
-          </Card.Header>
-          <Card.Body>
-            {loading ? (
-              <Flex justify="center" py={8}>
+            {summaryLoading ? (
+              <Flex justify="center" py={12}>
                 <Spinner size="lg" color="blue.500" />
               </Flex>
             ) : (
-              <WalletList
-                wallets={wallets}
-                onEdit={handleEditWallet}
-                onDelete={handleDeleteWallet}
-                formatCurrency={displayCurrency}
-              />
+              <WalletSummaryChart data={summary} />
             )}
-          </Card.Body>
-        </Card.Root>
-      </VStack>
+          </Box>
+
+          {/* Quick Stats Panel */}
+          <Box
+            bg={cardBg}
+            borderRadius="2xl"
+            border="1px solid"
+            borderColor={borderColor}
+            p={{ base: 5, md: 6 }}
+            shadow="xs"
+          >
+            <Flex justify="space-between" align="center" mb={6}>
+              <Box>
+                <Heading as="h2" size="sm" fontWeight="700" letterSpacing="tight">
+                  Portfolio Overview
+                </Heading>
+                <Text color={subtitleColor} fontSize="xs" mt={0.5}>
+                  Key wallet account statistics
+                </Text>
+              </Box>
+              <Badge colorPalette="purple" variant="subtle" px={2.5} py={0.5} borderRadius="full" fontSize="xs" fontWeight="600">
+                Overview
+              </Badge>
+            </Flex>
+
+            <VStack align="stretch" gap={4}>
+              <Flex justify="space-between" align="center" p={3.5} borderRadius="xl" bg={useColorModeValue('gray.50/60', 'gray.900/40')} border="1px solid" borderColor={borderColor}>
+                <Text fontSize="xs" fontWeight="600" color={subtitleColor}>Total Wallets</Text>
+                <Badge colorPalette="blue" variant="subtle" px={2.5} py={0.5} borderRadius="full" fontSize="xs" fontWeight="700">
+                  {wallets.length} accounts
+                </Badge>
+              </Flex>
+
+              <Flex justify="space-between" align="center" p={3.5} borderRadius="xl" bg={useColorModeValue('gray.50/60', 'gray.900/40')} border="1px solid" borderColor={borderColor}>
+                <Text fontSize="xs" fontWeight="600" color={subtitleColor}>Active Currencies</Text>
+                <Badge colorPalette="green" variant="subtle" px={2.5} py={0.5} borderRadius="full" fontSize="xs" fontWeight="700">
+                  {Object.keys(summary).length} currencies
+                </Badge>
+              </Flex>
+
+              <Flex justify="space-between" align="center" p={3.5} borderRadius="xl" bg={useColorModeValue('gray.50/60', 'gray.900/40')} border="1px solid" borderColor={borderColor}>
+                <Text fontSize="xs" fontWeight="600" color={subtitleColor}>Total Nominal Balance</Text>
+                <Text fontSize="sm" fontWeight="800">
+                  {displayNumber(Object.values(summary).reduce((sum, val) => sum + val, 0))}
+                </Text>
+              </Flex>
+            </VStack>
+          </Box>
+        </Grid>
+
+        {/* Your Wallets List Section */}
+        <Box
+          bg={cardBg}
+          borderRadius="2xl"
+          border="1px solid"
+          borderColor={borderColor}
+          p={{ base: 5, md: 6 }}
+          shadow="xs"
+        >
+          <Flex justify="space-between" align="center" mb={6}>
+            <Box>
+              <Heading as="h2" size="sm" fontWeight="700" letterSpacing="tight">
+                Your Wallets & Accounts
+              </Heading>
+              <Text color={subtitleColor} fontSize="xs" mt={0.5}>
+                Individual account details, balances, and management
+              </Text>
+            </Box>
+            <VisibilityToggle isHidden={isHidden} onToggle={toggleVisibility} />
+          </Flex>
+
+          {loading ? (
+            <Flex justify="center" py={12}>
+              <Spinner size="lg" color="blue.500" />
+            </Flex>
+          ) : (
+            <WalletList
+              wallets={wallets}
+              onEdit={handleEditWallet}
+              onDelete={handleDeleteWallet}
+              formatCurrency={displayCurrency}
+            />
+          )}
+        </Box>
+      </Box>
     </Box>
   );
 };

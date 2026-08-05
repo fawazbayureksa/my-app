@@ -186,7 +186,7 @@ export default function Users() {
       {/* Header Section */}
       <Flex direction={{ base: 'column', sm: 'row' }} justify="space-between" align={{ base: 'start', sm: 'center' }} mb={8} gap={4}>
         <Box>
-          <Heading as="h1" size="2xl" mb={2} color={{ base: 'gray.900', _dark: 'white' }} fontWeight="bold" letterSpacing="tight">
+          <Heading as="h5" size="2xl" mb={2} color={{ base: 'gray.900', _dark: 'white' }} fontWeight="bold" letterSpacing="tight">
             User Management
           </Heading>
           <Text color={{ base: 'gray.500', _dark: 'gray.400' }} fontSize="md">
