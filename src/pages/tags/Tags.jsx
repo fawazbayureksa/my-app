@@ -240,7 +240,7 @@ export default function Tags() {
           <Box>
             <Flex align="center" gap={3}>
               <Icon as={FiTag} boxSize={6} color="blue.500" />
-              <Heading as="h1" size="xl" fontWeight="bold">
+              <Heading as="h5" size="xl" fontWeight="bold">
                 Tags
               </Heading>
             </Flex>
