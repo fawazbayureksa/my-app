@@ -44,32 +44,41 @@ export default function StatCard({
             borderRadius="2xl"
             border="1px solid"
             borderColor={borderColor}
-            boxShadow="sm"
-            _hover={{ boxShadow: 'md', transform: 'translateY(-2px)' }}
-            transition="all 0.2s ease"
+            boxShadow="xs"
+            _hover={{ boxShadow: 'sm', transform: 'translateY(-2px)' }}
+            transition="all 0.2s cubic-bezier(0.4, 0, 0.2, 1)"
             overflow="hidden"
         >
             <Card.Body p={5}>
                 <Flex justify="space-between" align="flex-start">
                     <Box flex={1}>
-                        <Text fontSize="sm" fontWeight="medium" color={labelColor} mb={1}>
+                        <Text fontSize="xs" fontWeight="600" textTransform="uppercase" letterSpacing="wider" color={labelColor} mb={1.5}>
                             {title}
                         </Text>
                         <Text fontSize="2xl" fontWeight="bold" letterSpacing="tight">
                             {displayValue}
                         </Text>
                         {change !== undefined && (
-                            <Flex align="center" gap={1} mt={2}>
-                                <Icon
-                                    as={isPositiveChange ? FiTrendingUp : FiTrendingDown}
-                                    color={changeColor}
-                                    boxSize={4}
-                                />
-                                <Text fontSize="sm" fontWeight="medium" color={changeColor}>
-                                    {isPositiveChange ? '+' : ''}{change.toFixed(1)}%
-                                </Text>
+                            <Flex align="center" gap={1.5} mt={2.5}>
+                                <Flex
+                                    align="center"
+                                    gap={0.5}
+                                    px={2}
+                                    py={0.5}
+                                    borderRadius="full"
+                                    bg={useColorModeValue(isPositiveChange ? 'green.50' : 'red.50', isPositiveChange ? 'green.950/40' : 'red.950/40')}
+                                >
+                                    <Icon
+                                        as={isPositiveChange ? FiTrendingUp : FiTrendingDown}
+                                        color={changeColor}
+                                        boxSize={3.5}
+                                    />
+                                    <Text fontSize="xs" fontWeight="semibold" color={changeColor}>
+                                        {isPositiveChange ? '+' : ''}{change.toFixed(1)}%
+                                    </Text>
+                                </Flex>
                                 {changeLabel && (
-                                    <Text fontSize="xs" color={labelColor} ml={1}>
+                                    <Text fontSize="xs" color={labelColor}>
                                         {changeLabel}
                                     </Text>
                                 )}
@@ -78,14 +87,15 @@ export default function StatCard({
                     </Box>
                     {IconComponent && (
                         <Flex
-                            w={12}
-                            h={12}
+                            w={11}
+                            h={11}
                             align="center"
                             justify="center"
                             borderRadius="xl"
                             bg={iconBg}
+                            flexShrink={0}
                         >
-                            <Icon as={IconComponent} boxSize={6} color={iconColor} />
+                            <Icon as={IconComponent} boxSize={5} color={iconColor} />
                         </Flex>
                     )}
                 </Flex>

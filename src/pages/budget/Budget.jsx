@@ -7,11 +7,12 @@ import {
   Button,
   Flex,
   Badge,
-  Card,
   Grid,
   HStack,
   VStack,
-  Circle,
+  SimpleGrid,
+  IconButton,
+  Spacer
 } from "@chakra-ui/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -24,14 +25,15 @@ import {
   FaChartPie,
   FaArrowTrendUp,
   FaArrowTrendDown,
-  FaLayerGroup,
   FaChevronLeft,
   FaChevronRight,
+  FaLayerGroup
 } from "react-icons/fa6";
 import axios from 'axios';
 import Config from '../../components/axios/Config';
 import { toaster } from "./../../components/ui/toaster";
 import { useNavigate } from 'react-router-dom';
+import { useColorModeValue } from '../../components/ui/color-mode';
 
 const MotionBox = motion(Box);
 const MotionGrid = motion(Grid);
@@ -39,282 +41,149 @@ const MotionGrid = motion(Grid);
 // ─── Animation Variants ──────────────────────────────────────────────────────
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.07 } },
+  visible: { opacity: 1, transition: { staggerChildren: 0.05 } },
 };
 const cardVariants = {
-  hidden: { y: 24, opacity: 0 },
-  visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 260, damping: 20 } },
+  hidden: { y: 16, opacity: 0 },
+  visible: { y: 0, opacity: 1, transition: { duration: 0.3, ease: 'easeOut' } },
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const getProgressColor = (pct) => {
-  if (pct >= 100) return '#EF4444';
-  if (pct >= 80)  return '#F97316';
-  if (pct >= 60)  return '#EAB308';
-  return '#22C55E';
+  if (pct >= 100) return 'red.500';
+  if (pct >= 80)  return 'orange.500';
+  if (pct >= 60)  return 'yellow.500';
+  return 'green.500';
 };
 
-const getStatusConfig = (status) => {
+const getStatusBadge = (status) => {
   switch (status) {
-    case 'safe':     return { color: 'green',  bg: 'rgba(34,197,94,0.12)',  label: 'Safe' };
-    case 'warning':  return { color: 'orange', bg: 'rgba(249,115,22,0.12)', label: 'Warning' };
-    case 'exceeded': return { color: 'red',    bg: 'rgba(239,68,68,0.12)',  label: 'Exceeded' };
-    default:         return { color: 'gray',   bg: 'rgba(107,114,128,0.1)', label: status || 'Unknown' };
+    case 'safe':     return { palette: 'green',  label: 'Safe' };
+    case 'warning':  return { palette: 'orange', label: 'Warning' };
+    case 'exceeded': return { palette: 'red',    label: 'Exceeded' };
+    default:         return { palette: 'gray',   label: status || 'Unknown' };
   }
 };
 
 const formatIDR = (val) =>
   val != null ? `Rp ${Number(val).toLocaleString('id-ID')}` : 'Rp 0';
 
-// ─── Styled Select ────────────────────────────────────────────────────────────
-function FilterSelect({ value, onChange, children, minW = '160px' }) {
-  return (
-    <Box position="relative">
-      <select
-        value={value}
-        onChange={onChange}
-        style={{
-          appearance: 'none',
-          WebkitAppearance: 'none',
-          padding: '8px 36px 8px 14px',
-          borderRadius: '12px',
-          border: '1.5px solid',
-          borderColor: value ? '#6366F1' : 'rgba(99,102,241,0.2)',
-          fontSize: '13px',
-          fontWeight: 500,
-          minWidth: minW,
-          background: value
-            ? 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.08))'
-            : 'rgba(255,255,255,0.05)',
-          color: 'inherit',
-          cursor: 'pointer',
-          outline: 'none',
-          transition: 'all 0.2s',
-        }}
-      >
-        {children}
-      </select>
-      <Box
-        position="absolute"
-        right="10px"
-        top="50%"
-        transform="translateY(-50%)"
-        pointerEvents="none"
-        color={value ? '#6366F1' : 'gray'}
-        fontSize="11px"
-      >
-        ▼
-      </Box>
-    </Box>
-  );
-}
-
-
-// ─── Budget Card ──────────────────────────────────────────────────────────────
+// ─── Budget Card Component ────────────────────────────────────────────────────
 function BudgetCard({ budget, onEdit, onDelete }) {
+  const cardBg = useColorModeValue('white', 'gray.800');
+  const borderColor = useColorModeValue('gray.100', 'gray.700');
+  const subtitleColor = useColorModeValue('gray.600', 'gray.400');
+
   const pct = budget.percentage_used || 0;
-  const progressColor = getProgressColor(pct);
-  const statusCfg = getStatusConfig(budget.status);
+  const statusCfg = getStatusBadge(budget.status);
   const remaining = (budget.amount || 0) - (budget.spent_amount || 0);
 
   return (
     <MotionBox variants={cardVariants}>
-      <Card.Root
+      <Box
+        bg={cardBg}
         borderRadius="2xl"
+        border="1px solid"
+        borderColor={borderColor}
+        shadow="xs"
         overflow="hidden"
-        border="1.5px solid"
-        borderColor={{ base: 'gray.100', _dark: 'whiteAlpha.100' }}
-        bg={{ base: 'white', _dark: 'gray.800' }}
-        shadow="sm"
-        _hover={{ shadow: 'xl', transform: 'translateY(-4px)', borderColor: 'purple.200' }}
-        transition="all 0.3s cubic-bezier(0.175,0.885,0.32,1.275)"
         position="relative"
+        transition="all 0.2s cubic-bezier(0.4, 0, 0.2, 1)"
+        _hover={{ shadow: 'sm', transform: 'translateY(-2px)' }}
       >
-        {/* Top accent bar */}
+        {/* Top Accent Strip */}
         <Box
-          position="absolute"
-          top={0}
-          left={0}
-          right={0}
-          h="3px"
-          style={{
-            background: `linear-gradient(90deg, ${progressColor}, ${progressColor}88)`,
-          }}
+          h="6px"
+          bg={pct >= 100 ? 'red.500' : pct >= 80 ? 'orange.500' : pct >= 60 ? 'yellow.500' : 'green.500'}
         />
 
-        <Card.Body p={5} pt={6}>
-          {/* Header row */}
-          <Flex justify="space-between" align="flex-start" mb={4}>
-            <Box flex={1} mr={3}>
-              <Text fontWeight="black" fontSize="lg" lineHeight="tight" mb={1}>
+        <Box p={5}>
+          {/* Category & Status Header */}
+          <Flex justify="space-between" align="flex-start" mb={3}>
+            <Box flex={1} mr={2}>
+              <Heading as="h3" size="sm" fontWeight="700" letterSpacing="tight" mb={1.5}>
                 {budget.category_name || 'Uncategorized'}
-              </Text>
+              </Heading>
               <HStack gap={2} flexWrap="wrap">
-                <Badge
-                  borderRadius="full"
-                  px={3}
-                  py={0.5}
-                  fontSize="xs"
-                  fontWeight="bold"
-                  textTransform="capitalize"
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15))',
-                    color: '#6366F1',
-                    border: '1px solid rgba(99,102,241,0.25)',
-                  }}
-                >
+                <Badge colorPalette="blue" variant="subtle" size="xs" borderRadius="full" fontWeight="600">
                   {budget.period}
                 </Badge>
-                {budget.asset_name ? (
-                  <Badge
-                    borderRadius="full"
-                    px={3}
-                    py={0.5}
-                    fontSize="xs"
-                    fontWeight="bold"
-                    style={{
-                      background: 'rgba(6,182,212,0.12)',
-                      color: '#06B6D4',
-                      border: '1px solid rgba(6,182,212,0.25)',
-                    }}
-                  >
-                    {budget.asset_name}
-                  </Badge>
-                ) : (
-                  <Badge
-                    borderRadius="full"
-                    px={3}
-                    py={0.5}
-                    fontSize="xs"
-                    style={{
-                      background: 'rgba(107,114,128,0.1)',
-                      color: '#6B7280',
-                    }}
-                  >
-                    All Assets
-                  </Badge>
-                )}
+                <Badge colorPalette={budget.asset_name ? 'cyan' : 'gray'} variant="subtle" size="xs" borderRadius="full" fontWeight="600">
+                  {budget.asset_name || 'All Assets'}
+                </Badge>
               </HStack>
             </Box>
-            <Badge
-              borderRadius="full"
-              px={3}
-              py={1}
-              fontSize="xs"
-              fontWeight="bold"
-              textTransform="capitalize"
-              style={{
-                background: statusCfg.bg,
-                color: statusCfg.color === 'green' ? '#16A34A'
-                  : statusCfg.color === 'orange' ? '#EA580C'
-                  : statusCfg.color === 'red' ? '#DC2626'
-                  : '#6B7280',
-                border: `1px solid ${statusCfg.bg}`,
-              }}
-            >
+
+            <Badge colorPalette={statusCfg.palette} variant="subtle" size="xs" borderRadius="full" px={2.5} py={0.5} fontWeight="700">
               {statusCfg.label}
             </Badge>
           </Flex>
 
-          {/* Progress section */}
+          {/* Usage Progress Bar */}
           <Box mb={4}>
-            <Flex justify="space-between" align="center" mb={2}>
-              <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase" letterSpacing="wider">
+            <Flex justify="space-between" align="center" mb={1.5}>
+              <Text fontSize="xs" fontWeight="600" textTransform="uppercase" letterSpacing="wider" color={subtitleColor}>
                 Budget Usage
               </Text>
-              <Text
-                fontSize="sm"
-                fontWeight="black"
-                style={{ color: progressColor }}
-              >
+              <Text fontSize="xs" fontWeight="700" color={pct >= 100 ? 'red.500' : pct >= 80 ? 'orange.500' : 'green.500'}>
                 {pct.toFixed(1)}%
               </Text>
             </Flex>
-            <Box
-              h="8px"
-              borderRadius="full"
-              bg={{ base: 'gray.100', _dark: 'whiteAlpha.100' }}
-              overflow="hidden"
-            >
-              <MotionBox
+            <Box h="6px" borderRadius="full" bg={useColorModeValue('gray.100', 'gray.700')} overflow="hidden">
+              <Box
                 h="100%"
                 borderRadius="full"
-                initial={{ width: 0 }}
-                animate={{ width: `${Math.min(pct, 100)}%` }}
-                transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
-                style={{ background: `linear-gradient(90deg, ${progressColor}aa, ${progressColor})` }}
+                w={`${Math.min(pct, 100)}%`}
+                bg={pct >= 100 ? 'red.500' : pct >= 80 ? 'orange.500' : pct >= 60 ? 'yellow.500' : 'green.500'}
+                transition="width 0.4s ease-out"
               />
             </Box>
           </Box>
 
-          {/* Amount grid */}
-          <Grid templateColumns="repeat(3, 1fr)" gap={3} mb={4}>
-            <Box
-              p={3}
-              borderRadius="xl"
-              bg={{ base: 'gray.50', _dark: 'whiteAlpha.50' }}
-              textAlign="center"
-            >
-              <Text fontSize="xs" color="gray.500" fontWeight="medium" mb={1}>Budget</Text>
-              <Text fontSize="sm" fontWeight="black" noOfLines={1}>
-                {formatIDR(budget.amount)}
-              </Text>
+          {/* 3-Column Amount Breakdown */}
+          <Grid templateColumns="repeat(3, 1fr)" gap={2.5} mb={4}>
+            <Box p={2.5} borderRadius="xl" bg={useColorModeValue('gray.50/80', 'gray.900/60')} border="1px solid" borderColor={borderColor} textAlign="center">
+              <Text fontSize="xs" color={subtitleColor} mb={0.5}>Budget</Text>
+              <Text fontSize="xs" fontWeight="700" noOfLines={1}>{formatIDR(budget.amount)}</Text>
             </Box>
-            <Box
-              p={3}
-              borderRadius="xl"
-              bg={{ base: 'orange.50', _dark: 'rgba(249,115,22,0.08)' }}
-              textAlign="center"
-            >
-              <Text fontSize="xs" color="orange.500" fontWeight="medium" mb={1}>Spent</Text>
-              <Text fontSize="sm" fontWeight="black" color="orange.600" noOfLines={1}>
-                {formatIDR(budget.spent_amount)}
-              </Text>
+            <Box p={2.5} borderRadius="xl" bg={useColorModeValue('orange.50/50', 'orange.950/40')} border="1px solid" borderColor={useColorModeValue('orange.100', 'orange.900')} textAlign="center">
+              <Text fontSize="xs" color={useColorModeValue('orange.600', 'orange.300')} mb={0.5}>Spent</Text>
+              <Text fontSize="xs" fontWeight="700" color={useColorModeValue('orange.700', 'orange.200')} noOfLines={1}>{formatIDR(budget.spent_amount)}</Text>
             </Box>
-            <Box
-              p={3}
-              borderRadius="xl"
-              bg={{ base: remaining >= 0 ? 'green.50' : 'red.50', _dark: remaining >= 0 ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)' }}
-              textAlign="center"
-            >
-              <Text fontSize="xs" color={remaining >= 0 ? 'green.500' : 'red.500'} fontWeight="medium" mb={1}>
+            <Box p={2.5} borderRadius="xl" bg={useColorModeValue(remaining >= 0 ? 'green.50/50' : 'red.50/50', remaining >= 0 ? 'green.950/40' : 'red.950/40')} border="1px solid" borderColor={useColorModeValue(remaining >= 0 ? 'green.100' : 'red.100', remaining >= 0 ? 'green.900' : 'red.900')} textAlign="center">
+              <Text fontSize="xs" color={useColorModeValue(remaining >= 0 ? 'green.600' : 'red.600', remaining >= 0 ? 'green.300' : 'red.300')} mb={0.5}>
                 {remaining >= 0 ? 'Left' : 'Over'}
               </Text>
-              <Text fontSize="sm" fontWeight="black" color={remaining >= 0 ? 'green.600' : 'red.600'} noOfLines={1}>
+              <Text fontSize="xs" fontWeight="700" color={useColorModeValue(remaining >= 0 ? 'green.700' : 'red.700', remaining >= 0 ? 'green.200' : 'red.200')} noOfLines={1}>
                 {formatIDR(Math.abs(remaining))}
               </Text>
             </Box>
           </Grid>
 
-          {/* Actions */}
-          <Flex gap={2} justify="flex-end">
+          {/* Action Buttons */}
+          <Flex gap={2} justify="flex-end" pt={3} borderTop="1px solid" borderColor={borderColor}>
             <Button
-              size="sm"
+              size="xs"
               variant="ghost"
-              borderRadius="xl"
+              borderRadius="lg"
               onClick={() => onEdit(budget)}
-              _hover={{ bg: 'rgba(99,102,241,0.1)', color: '#6366F1' }}
             >
-              <HStack gap={1.5}>
-                <FaPencil size={12} />
-                <Text>Edit</Text>
-              </HStack>
+              <FaPencil style={{ marginRight: '4px' }} size={11} />
+              Edit
             </Button>
             <Button
-              size="sm"
+              size="xs"
               variant="ghost"
-              borderRadius="xl"
+              colorPalette="red"
+              borderRadius="lg"
               onClick={() => onDelete(budget.id)}
-              _hover={{ bg: 'rgba(239,68,68,0.1)', color: '#EF4444' }}
             >
-              <HStack gap={1.5}>
-                <FaTrash size={12} />
-                <Text>Delete</Text>
-              </HStack>
+              <FaTrash style={{ marginRight: '4px' }} size={11} />
+              Delete
             </Button>
           </Flex>
-        </Card.Body>
-      </Card.Root>
+        </Box>
+      </Box>
     </MotionBox>
   );
 }
@@ -339,6 +208,11 @@ export default function Budget() {
   const [filterIsActive, setFilterIsActive] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [sortDir, setSortDir] = useState('asc');
+
+  const pageBg = useColorModeValue('gray.50', 'gray.900');
+  const cardBg = useColorModeValue('white', 'gray.800');
+  const borderColor = useColorModeValue('gray.100', 'gray.700');
+  const subtitleColor = useColorModeValue('gray.600', 'gray.400');
 
   const fetchBudgets = useCallback(async () => {
     setLoading(true);
@@ -431,442 +305,380 @@ export default function Budget() {
   }, [page, totalPages]);
 
   return (
-    <Box maxW="7xl" mx="auto" px={4} py={8}>
-
-      {/* ── Gradient Header ─────────────────────────────────────────────── */}
-      <MotionBox
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        mb={8}
-        borderRadius="3xl"
-        overflow="hidden"
-        position="relative"
-        style={{
-          background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #9333EA 100%)',
-        }}
-        p={{ base: 6, md: 8 }}
-      >
-        {/* Decorative blobs */}
-        <Box
-          position="absolute" top="-40px" right="-40px"
-          w="200px" h="200px" borderRadius="full"
-          bg="whiteAlpha.100" pointerEvents="none"
-        />
-        <Box
-          position="absolute" bottom="-60px" left="30%"
-          w="250px" h="250px" borderRadius="full"
-          bg="whiteAlpha.50" pointerEvents="none"
-        />
-
+    <Box minH="100vh" bg={pageBg}>
+      <Box maxW="7xl" mx="auto" px={{ base: 4, sm: 6, lg: 8 }} py={8}>
+        {/* Hero Header */}
         <Flex
           justify="space-between"
-          align={{ base: 'flex-start', md: 'center' }}
-          direction={{ base: 'column', md: 'row' }}
+          align={{ base: 'flex-start', sm: 'center' }}
+          direction={{ base: 'column', sm: 'row' }}
           gap={4}
-          position="relative"
+          mb={8}
+          pb={6}
+          borderBottom="1px solid"
+          borderColor={borderColor}
         >
           <Box>
-            <HStack gap={3} mb={2}>
-              <Circle size="44px" bg="whiteAlpha.200">
-                <FaWallet size={20} color="white" />
-              </Circle>
-              <Box>
-                <Heading as="h1" size="xl" color="white" fontWeight="black" letterSpacing="tight">
-                  Budget Management
-                </Heading>
-                <Text color="whiteAlpha.800" fontSize="sm">
-                  {totalItems} budget{totalItems !== 1 ? 's' : ''} · Track & control your spending
-                </Text>
-              </Box>
-            </HStack>
+            <Flex align="center" gap={2} mb={2}>
+              <Box w={2} h={2} borderRadius="full" bg="blue.500" />
+              <Text fontSize="xs" fontWeight="600" textTransform="uppercase" letterSpacing="widest" color={subtitleColor}>
+                Budget Infrastructure
+              </Text>
+            </Flex>
+            <Heading as="h5" size={{ base: 'xl', md: '2xl' }} fontWeight="800" letterSpacing="tight" mb={1.5}>
+              Budget Management
+            </Heading>
+            <Text color={subtitleColor} fontSize="md">
+              Set, track, and control spending limits across categories and accounts.
+            </Text>
           </Box>
 
           <Button
             onClick={handleAddNew}
+            bg="blue.500"
+            color="white"
+            _hover={{ bg: "blue.600" }}
             size="md"
-            borderRadius="2xl"
-            fontWeight="bold"
-            bg="white"
-            color="#4F46E5"
-            _hover={{ bg: 'whiteAlpha.900', transform: 'scale(1.03)' }}
-            transition="all 0.2s"
-            shadow="md"
+            borderRadius="xl"
+            px={5}
+            fontWeight="600"
+            boxShadow="xs"
           >
-            <HStack gap={2}>
-              <FaPlus size={14} />
-              <Text>Create Budget</Text>
-            </HStack>
+            <FaPlus style={{ marginRight: '6px' }} />
+            Create Budget
           </Button>
         </Flex>
 
-        {/* Mini stat row */}
-        <Grid
-          templateColumns={{ base: 'repeat(3, 1fr)' }}
-          gap={3}
-          mt={6}
-          position="relative"
-        >
-          {[
-            { label: 'Total Budget', value: formatIDR(stats.totalBudget), icon: FaChartPie },
-            { label: 'Total Spent',  value: formatIDR(stats.totalSpent),  icon: FaArrowTrendDown },
-            { label: 'Exceeded',     value: `${stats.exceeded} budget${stats.exceeded !== 1 ? 's' : ''}`, icon: FaArrowTrendUp },
-          ].map(({ label, value, icon }) => {
-            const StatIcon = icon;
-            return (
-            <Box
-              key={label}
-              p={4}
-              borderRadius="2xl"
-              bg="whiteAlpha.200"
-              backdropFilter="blur(10px)"
-            >
-              <HStack gap={2} mb={1}>
-                <StatIcon size={14} color="rgba(255,255,255,0.7)" />
-                <Text fontSize="xs" color="whiteAlpha.700" fontWeight="bold" textTransform="uppercase" letterSpacing="wider">
-                  {label}
-                </Text>
-              </HStack>
-              <Text fontSize={{ base: 'sm', md: 'md' }} fontWeight="black" color="white" noOfLines={1}>
-                {value}
+        {/* Summary Stat Cards Grid */}
+        <SimpleGrid columns={{ base: 1, md: 3 }} gap={5} mb={8}>
+          <Box bg={cardBg} borderRadius="2xl" border="1px solid" borderColor={borderColor} p={5} shadow="xs">
+            <Flex justify="space-between" align="center" mb={2}>
+              <Text fontSize="xs" fontWeight="600" textTransform="uppercase" letterSpacing="wider" color={subtitleColor}>
+                Total Budget
               </Text>
-            </Box>
-          )})}
-        </Grid>
-      </MotionBox>
+              <Flex w={9} h={9} align="center" justify="center" borderRadius="xl" bg={useColorModeValue('blue.50', 'blue.950/50')}>
+                <FaChartPie color="var(--chakra-colors-blue-500)" size={16} />
+              </Flex>
+            </Flex>
+            <Text fontSize="2xl" fontWeight="bold" letterSpacing="tight">
+              {formatIDR(stats.totalBudget)}
+            </Text>
+            <Text fontSize="xs" color={subtitleColor} mt={1}>
+              Allocated across active budgets
+            </Text>
+          </Box>
 
-      {/* ── Filter Bar ──────────────────────────────────────────────────── */}
-      <MotionBox
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.4 }}
-        mb={6}
-      >
-        <Card.Root
+          <Box bg={cardBg} borderRadius="2xl" border="1px solid" borderColor={borderColor} p={5} shadow="xs">
+            <Flex justify="space-between" align="center" mb={2}>
+              <Text fontSize="xs" fontWeight="600" textTransform="uppercase" letterSpacing="wider" color={subtitleColor}>
+                Total Spent
+              </Text>
+              <Flex w={9} h={9} align="center" justify="center" borderRadius="xl" bg={useColorModeValue('orange.50', 'orange.950/50')}>
+                <FaArrowTrendDown color="var(--chakra-colors-orange-500)" size={16} />
+              </Flex>
+            </Flex>
+            <Text fontSize="2xl" fontWeight="bold" letterSpacing="tight" color={useColorModeValue('orange.600', 'orange.300')}>
+              {formatIDR(stats.totalSpent)}
+            </Text>
+            <Text fontSize="xs" color={subtitleColor} mt={1}>
+              Total current expenditure
+            </Text>
+          </Box>
+
+          <Box bg={cardBg} borderRadius="2xl" border="1px solid" borderColor={borderColor} p={5} shadow="xs">
+            <Flex justify="space-between" align="center" mb={2}>
+              <Text fontSize="xs" fontWeight="600" textTransform="uppercase" letterSpacing="wider" color={subtitleColor}>
+                Exceeded Limits
+              </Text>
+              <Flex w={9} h={9} align="center" justify="center" borderRadius="xl" bg={useColorModeValue('red.50', 'red.950/50')}>
+                <FaArrowTrendUp color="var(--chakra-colors-red-500)" size={16} />
+              </Flex>
+            </Flex>
+            <Text fontSize="2xl" fontWeight="bold" letterSpacing="tight" color={useColorModeValue(stats.exceeded > 0 ? 'red.600' : 'green.600', stats.exceeded > 0 ? 'red.300' : 'green.300')}>
+              {stats.exceeded} {stats.exceeded === 1 ? 'budget' : 'budgets'}
+            </Text>
+            <Text fontSize="xs" color={subtitleColor} mt={1}>
+              {stats.exceeded > 0 ? 'Requires limit review' : 'All budgets within limit'}
+            </Text>
+          </Box>
+        </SimpleGrid>
+
+        {/* Filter Toolbar */}
+        <Box
+          bg={cardBg}
           borderRadius="2xl"
-          border="1.5px solid"
-          borderColor={{ base: 'gray.100', _dark: 'whiteAlpha.100' }}
-          bg={{ base: 'white', _dark: 'gray.800' }}
-          shadow="sm"
-          p={4}
+          border="1px solid"
+          borderColor={borderColor}
+          p={5}
+          shadow="xs"
+          mb={8}
         >
           <Flex gap={3} wrap="wrap" align="center">
-            <HStack gap={2} color="gray.500">
+            <HStack gap={2} color={subtitleColor}>
               <FaFilter size={13} />
-              <Text fontSize="sm" fontWeight="bold">Filters</Text>
+              <Text fontSize="xs" fontWeight="700" textTransform="uppercase" letterSpacing="wider">Filters:</Text>
             </HStack>
 
-            <FilterSelect
-              value={filterCategoryId}
-              onChange={(e) => { setFilterCategoryId(e.target.value); setPage(1); }}
-              minW="170px"
-            >
-              <option value="">All Categories</option>
-              {categories.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-            </FilterSelect>
+            {/* Category Filter */}
+            <Box bg={useColorModeValue('gray.50', 'gray.900')} px={3} py={1.5} borderRadius="xl" border="1px solid" borderColor={borderColor}>
+              <select
+                value={filterCategoryId}
+                onChange={(e) => { setFilterCategoryId(e.target.value); setPage(1); }}
+                style={{ background: 'transparent', border: 'none', fontSize: '13px', fontWeight: '600', outline: 'none', cursor: 'pointer' }}
+              >
+                <option value="">All Categories</option>
+                {categories.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
+            </Box>
 
-            <FilterSelect
-              value={filterPeriod}
-              onChange={(e) => { setFilterPeriod(e.target.value); setPage(1); }}
-              minW="140px"
-            >
-              <option value="">All Periods</option>
-              <option value="monthly">Monthly</option>
-              <option value="yearly">Yearly</option>
-            </FilterSelect>
+            {/* Period Filter */}
+            <Box bg={useColorModeValue('gray.50', 'gray.900')} px={3} py={1.5} borderRadius="xl" border="1px solid" borderColor={borderColor}>
+              <select
+                value={filterPeriod}
+                onChange={(e) => { setFilterPeriod(e.target.value); setPage(1); }}
+                style={{ background: 'transparent', border: 'none', fontSize: '13px', fontWeight: '600', outline: 'none', cursor: 'pointer' }}
+              >
+                <option value="">All Periods</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+              </select>
+            </Box>
 
-            <FilterSelect
-              value={filterAssetId}
-              onChange={(e) => { setFilterAssetId(e.target.value); setPage(1); }}
-              minW="170px"
-            >
-              <option value="">All Assets</option>
-              {assets.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
-            </FilterSelect>
+            {/* Asset Filter */}
+            <Box bg={useColorModeValue('gray.50', 'gray.900')} px={3} py={1.5} borderRadius="xl" border="1px solid" borderColor={borderColor}>
+              <select
+                value={filterAssetId}
+                onChange={(e) => { setFilterAssetId(e.target.value); setPage(1); }}
+                style={{ background: 'transparent', border: 'none', fontSize: '13px', fontWeight: '600', outline: 'none', cursor: 'pointer' }}
+              >
+                <option value="">All Assets</option>
+                {assets.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
+              </select>
+            </Box>
 
-            <FilterSelect
-              value={filterIsActive}
-              onChange={(e) => { setFilterIsActive(e.target.value); setPage(1); }}
-              minW="130px"
-            >
-              <option value="">All Status</option>
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
-            </FilterSelect>
+            {/* Status Filter */}
+            <Box bg={useColorModeValue('gray.50', 'gray.900')} px={3} py={1.5} borderRadius="xl" border="1px solid" borderColor={borderColor}>
+              <select
+                value={filterIsActive}
+                onChange={(e) => { setFilterIsActive(e.target.value); setPage(1); }}
+                style={{ background: 'transparent', border: 'none', fontSize: '13px', fontWeight: '600', outline: 'none', cursor: 'pointer' }}
+              >
+                <option value="">All Status</option>
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </select>
+            </Box>
 
             {hasFilters && (
-              <Button
-                size="sm"
-                variant="ghost"
-                borderRadius="xl"
-                onClick={handleClearFilters}
-                color="red.400"
-                _hover={{ bg: 'red.50', color: 'red.500' }}
-              >
-                <HStack gap={1.5}>
-                  <FaXmark size={12} />
-                  <Text>Clear</Text>
-                </HStack>
+              <Button size="sm" variant="ghost" colorPalette="red" borderRadius="xl" onClick={handleClearFilters}>
+                <FaXmark style={{ marginRight: '4px' }} size={12} />
+                Clear
               </Button>
             )}
 
-            <Box flex={1} />
+            <Spacer />
 
             <HStack gap={2}>
-              <Text fontSize="xs" color="gray.500" fontWeight="medium" whiteSpace="nowrap">Per page:</Text>
-              <FilterSelect
-                value={pageSize}
-                onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
-                minW="70px"
-              >
-                {[6, 12, 24, 48].map(n => <option key={n} value={n}>{n}</option>)}
-              </FilterSelect>
+              <Text fontSize="xs" fontWeight="600" color={subtitleColor}>Show</Text>
+              <Box bg={useColorModeValue('gray.50', 'gray.900')} px={2} py={1} borderRadius="lg" border="1px solid" borderColor={borderColor}>
+                <select
+                  value={pageSize}
+                  onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+                  style={{ background: 'transparent', border: 'none', fontSize: '13px', fontWeight: '600', outline: 'none', cursor: 'pointer' }}
+                >
+                  {[6, 12, 24, 48].map(n => <option key={n} value={n}>{n} per page</option>)}
+                </select>
+              </Box>
             </HStack>
           </Flex>
 
-          {/* Active filter chips */}
-          <AnimatePresence>
-            {hasFilters && (
-              <MotionBox
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                overflow="hidden"
-              >
-                <Flex gap={2} flexWrap="wrap" mt={3} pt={3} borderTop="1px solid" borderColor={{ base: 'gray.100', _dark: 'whiteAlpha.100' }}>
-                  <Text fontSize="xs" color="gray.400" fontWeight="medium" alignSelf="center">Active:</Text>
-                  {filterCategoryId && (
-                    <Badge borderRadius="full" px={3} py={1} fontSize="xs" colorPalette="purple">
-                      Category: {categories.find(c => c.value == filterCategoryId)?.label}
-                    </Badge>
-                  )}
-                  {filterAssetId && (
-                    <Badge borderRadius="full" px={3} py={1} fontSize="xs" colorPalette="cyan">
-                      Asset: {assets.find(a => a.value == filterAssetId)?.label}
-                    </Badge>
-                  )}
-                  {filterPeriod && (
-                    <Badge borderRadius="full" px={3} py={1} fontSize="xs" colorPalette="green">
-                      Period: {filterPeriod}
-                    </Badge>
-                  )}
-                  {filterIsActive && (
-                    <Badge borderRadius="full" px={3} py={1} fontSize="xs" colorPalette="blue">
-                      {filterIsActive === 'true' ? 'Active' : 'Inactive'}
-                    </Badge>
-                  )}
-                  {sortBy && (
-                    <Badge borderRadius="full" px={3} py={1} fontSize="xs" colorPalette="orange">
-                      Sort: {sortBy} ({sortDir})
-                    </Badge>
-                  )}
-                </Flex>
-              </MotionBox>
-            )}
-          </AnimatePresence>
-        </Card.Root>
-      </MotionBox>
-
-      {/* ── Loading ──────────────────────────────────────────────────────── */}
-      {loading && (
-        <Flex justify="center" align="center" py={20}>
-          <VStack gap={4}>
-            <Spinner
-              size="xl"
-              thickness="4px"
-              style={{ borderColor: 'rgba(99,102,241,0.2)', borderTopColor: '#6366F1' }}
-            />
-            <Text color="gray.500" fontWeight="medium">Loading budgets...</Text>
-          </VStack>
-        </Flex>
-      )}
-
-      {/* ── Error ────────────────────────────────────────────────────────── */}
-      {error && !loading && (
-        <Box
-          textAlign="center" py={10} px={6}
-          bg="red.50" borderRadius="2xl"
-          border="1px solid" borderColor="red.100"
-          mb={6}
-        >
-          <Text color="red.600" fontWeight="bold" mb={3}>Something went wrong: {error}</Text>
-          <Button colorPalette="red" variant="subtle" borderRadius="xl" onClick={fetchBudgets}>
-            Try Again
-          </Button>
-        </Box>
-      )}
-
-      {/* ── Budget Cards Grid ─────────────────────────────────────────────── */}
-      {!loading && budgets.length > 0 ? (
-        <>
-          <MotionGrid
-            templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', xl: 'repeat(3, 1fr)' }}
-            gap={5}
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            mb={6}
-          >
-            {budgets.map((budget) => (
-              <BudgetCard
-                key={budget.id}
-                budget={budget}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            ))}
-          </MotionGrid>
-
-          {/* ── Pagination ─────────────────────────────────────────────── */}
-          <Card.Root
-            borderRadius="2xl"
-            border="1.5px solid"
-            borderColor={{ base: 'gray.100', _dark: 'whiteAlpha.100' }}
-            bg={{ base: 'white', _dark: 'gray.800' }}
-            shadow="sm"
-            p={4}
-          >
-            <Flex justify="space-between" align="center" wrap="wrap" gap={3}>
-              <Text fontSize="sm" color="gray.500">
-                Showing <Text as="span" fontWeight="bold" color="gray.700">{((page - 1) * pageSize) + 1}</Text>
-                {' '}–{' '}
-                <Text as="span" fontWeight="bold" color="gray.700">{Math.min(page * pageSize, totalItems)}</Text>
-                {' '}of{' '}
-                <Text as="span" fontWeight="bold" color="gray.700">{totalItems}</Text> budgets
-              </Text>
-
-              <HStack gap={1.5}>
-                <Button
-                  size="sm" variant="ghost" borderRadius="xl"
-                  onClick={() => setPage(1)} disabled={page === 1}
-                  _hover={{ bg: 'rgba(99,102,241,0.1)' }}
-                >
-                  First
-                </Button>
-                <Button
-                  size="sm" variant="ghost" borderRadius="xl"
-                  onClick={() => setPage(p => p - 1)} disabled={page === 1}
-                  _hover={{ bg: 'rgba(99,102,241,0.1)' }}
-                >
-                  <FaChevronLeft size={12} />
-                </Button>
-
-                {pageNums.map(n => (
-                  <Button
-                    key={n}
-                    size="sm"
-                    borderRadius="xl"
-                    onClick={() => setPage(n)}
-                    style={
-                      page === n
-                        ? { background: 'linear-gradient(135deg, #4F46E5, #7C3AED)', color: 'white' }
-                        : {}
-                    }
-                    variant={page === n ? 'solid' : 'ghost'}
-                    _hover={page !== n ? { bg: 'rgba(99,102,241,0.1)' } : {}}
-                  >
-                    {n}
-                  </Button>
-                ))}
-
-                <Button
-                  size="sm" variant="ghost" borderRadius="xl"
-                  onClick={() => setPage(p => p + 1)} disabled={page === totalPages}
-                  _hover={{ bg: 'rgba(99,102,241,0.1)' }}
-                >
-                  <FaChevronRight size={12} />
-                </Button>
-                <Button
-                  size="sm" variant="ghost" borderRadius="xl"
-                  onClick={() => setPage(totalPages)} disabled={page === totalPages}
-                  _hover={{ bg: 'rgba(99,102,241,0.1)' }}
-                >
-                  Last
-                </Button>
-              </HStack>
+          {/* Active Filter Badges */}
+          {hasFilters && (
+            <Flex gap={2} flexWrap="wrap" mt={3} pt={3} borderTop="1px solid" borderColor={borderColor}>
+              <Text fontSize="xs" fontWeight="700" color={subtitleColor}>Active filters:</Text>
+              {filterCategoryId && (
+                <Badge colorPalette="purple" variant="subtle" size="sm" borderRadius="full">
+                  Category: {categories.find(c => c.value == filterCategoryId)?.label}
+                </Badge>
+              )}
+              {filterAssetId && (
+                <Badge colorPalette="cyan" variant="subtle" size="sm" borderRadius="full">
+                  Asset: {assets.find(a => a.value == filterAssetId)?.label}
+                </Badge>
+              )}
+              {filterPeriod && (
+                <Badge colorPalette="green" variant="subtle" size="sm" borderRadius="full">
+                  Period: {filterPeriod}
+                </Badge>
+              )}
+              {filterIsActive && (
+                <Badge colorPalette="blue" variant="subtle" size="sm" borderRadius="full">
+                  {filterIsActive === 'true' ? 'Active' : 'Inactive'}
+                </Badge>
+              )}
             </Flex>
-          </Card.Root>
-        </>
-      ) : !loading && (
-        /* ── Empty State ──────────────────────────────────────────────── */
-        <AnimatePresence>
-          <MotionBox
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4 }}
-          >
-            <Card.Root
-              borderRadius="3xl"
-              border="1.5px dashed"
-              borderColor={{ base: 'gray.200', _dark: 'whiteAlpha.200' }}
-              bg={{ base: 'gray.50', _dark: 'gray.800' }}
-              p={16}
+          )}
+        </Box>
+
+        {/* Loading State */}
+        {loading && (
+          <Flex justify="center" align="center" py={16}>
+            <VStack gap={3}>
+              <Spinner size="xl" color="blue.500" />
+              <Text color={subtitleColor} fontSize="sm">Loading budgets...</Text>
+            </VStack>
+          </Flex>
+        )}
+
+        {/* Error Alert */}
+        {error && !loading && (
+          <Box p={4} borderRadius="2xl" bg="red.50" border="1px solid" borderColor="red.200" mb={6}>
+            <Text color="red.600" fontSize="sm" textAlign="center">
+              Error fetching budgets: {error}
+            </Text>
+          </Box>
+        )}
+
+        {/* Budget Cards Grid */}
+        {!loading && budgets.length > 0 ? (
+          <>
+            <MotionGrid
+              templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', xl: 'repeat(3, 1fr)' }}
+              gap={6}
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              mb={8}
             >
-              <VStack gap={6} align="center">
-                <Box position="relative">
-                  <Circle
-                    size="100px"
-                    style={{
-                      background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15))',
-                    }}
-                  >
-                    <FaLayerGroup size={40} color="#6366F1" />
-                  </Circle>
-                  <MotionBox
-                    position="absolute" top="-8px" right="-8px"
-                    animate={{ scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }}
-                    transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                  >
-                    <Circle size="32px" bg="yellow.400" shadow="md">
-                      <Text fontSize="md">✨</Text>
-                    </Circle>
-                  </MotionBox>
-                </Box>
+              {budgets.map((budget) => (
+                <BudgetCard
+                  key={budget.id}
+                  budget={budget}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </MotionGrid>
 
-                <Box textAlign="center">
-                  <Text fontSize="2xl" fontWeight="black" mb={2}>
-                    {hasFilters ? 'No Matching Budgets' : 'No Budgets Yet'}
-                  </Text>
-                  <Text color="gray.500" maxW="380px" fontSize="md">
-                    {hasFilters
-                      ? 'Try adjusting or clearing your filters to see more results.'
-                      : 'Start managing your finances by creating your first budget.'}
-                  </Text>
-                </Box>
+            {/* Pagination Controls */}
+            <Box
+              bg={cardBg}
+              borderRadius="2xl"
+              border="1px solid"
+              borderColor={borderColor}
+              p={4}
+              shadow="xs"
+            >
+              <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
+                <Text fontSize="xs" color={subtitleColor}>
+                  Showing <Text as="span" fontWeight="700">{((page - 1) * pageSize) + 1}</Text> to <Text as="span" fontWeight="700">{Math.min(page * pageSize, totalItems)}</Text> of <Text as="span" fontWeight="700">{totalItems}</Text> budgets
+                </Text>
 
-                <HStack gap={3}>
-                  {hasFilters && (
-                    <Button
-                      variant="outline"
-                      borderRadius="2xl"
-                      onClick={handleClearFilters}
-                      borderColor="gray.300"
-                    >
-                      Clear Filters
-                    </Button>
-                  )}
+                <HStack gap={1.5}>
                   <Button
-                    borderRadius="2xl"
-                    fontWeight="bold"
-                    onClick={handleAddNew}
-                    style={{
-                      background: 'linear-gradient(135deg, #4F46E5, #7C3AED)',
-                      color: 'white',
-                    }}
-                    _hover={{ opacity: 0.9, transform: 'scale(1.03)' }}
-                    transition="all 0.2s"
+                    size="xs"
+                    onClick={() => setPage(1)}
+                    isDisabled={page === 1}
+                    variant="outline"
+                    borderRadius="lg"
                   >
-                    <HStack gap={2}>
-                      <FaPlus size={14} />
-                      <Text>Create Budget</Text>
-                    </HStack>
+                    First
+                  </Button>
+                  <Button
+                    size="xs"
+                    onClick={() => setPage(p => p - 1)}
+                    isDisabled={page === 1}
+                    variant="outline"
+                    borderRadius="lg"
+                  >
+                    <FaChevronLeft size={10} />
+                  </Button>
+
+                  {pageNums.map(n => (
+                    <Button
+                      key={n}
+                      size="xs"
+                      w="7"
+                      h="7"
+                      bg="blue.500"
+                      onClick={() => setPage(n)}
+                      colorPalette={page === n ? 'blue' : 'gray'}
+                      variant={page === n ? 'solid' : 'ghost'}
+                      borderRadius="lg"
+                      fontWeight={page === n ? '700' : '500'}
+                    >
+                      {n}
+                    </Button>
+                  ))}
+
+                  <Button
+                    size="xs"
+                    onClick={() => setPage(p => p + 1)}
+                    isDisabled={page === totalPages}
+                    variant="outline"
+                    borderRadius="lg"
+                  >
+                    <FaChevronRight size={10} />
+                  </Button>
+                  <Button
+                    size="xs"
+                    onClick={() => setPage(totalPages)}
+                    isDisabled={page === totalPages}
+                    variant="outline"
+                    borderRadius="lg"
+                  >
+                    Last
                   </Button>
                 </HStack>
-              </VStack>
-            </Card.Root>
-          </MotionBox>
-        </AnimatePresence>
-      )}
+              </Flex>
+            </Box>
+          </>
+        ) : !loading && (
+          /* Empty State */
+          <Box
+            bg={cardBg}
+            borderRadius="2xl"
+            border="1px solid"
+            borderColor={borderColor}
+            p={12}
+            textAlign="center"
+            shadow="xs"
+          >
+            <VStack gap={3}>
+              <Flex w={12} h={12} align="center" justify="center" borderRadius="2xl" bg={useColorModeValue('blue.50', 'blue.950/50')}>
+                <FaLayerGroup size={24} color="var(--chakra-colors-blue-500)" />
+              </Flex>
+              <Heading size="sm" fontWeight="700">
+                {hasFilters ? 'No Matching Budgets' : 'No Budgets Created Yet'}
+              </Heading>
+              <Text fontSize="xs" color={subtitleColor} maxW="sm">
+                {hasFilters
+                  ? 'Try clearing or adjusting your filter criteria to see more budget entries.'
+                  : 'Start controlling your finances by setting your first spending limit.'}
+              </Text>
+              <HStack gap={3} mt={2}>
+                {hasFilters && (
+                  <Button variant="outline" size="sm" borderRadius="xl" onClick={handleClearFilters}>
+                    Clear Filters
+                  </Button>
+                )}
+                <Button
+                  onClick={handleAddNew}
+                  bg="blue.500"
+                  color="white"
+                  _hover={{ bg: "blue.600" }}
+                  size="sm"
+                  borderRadius="xl"
+                  fontWeight="600"
+                >
+                  <FaPlus style={{ marginRight: '6px' }} />
+                  Create Budget
+                </Button>
+              </HStack>
+            </VStack>
+          </Box>
+        )}
+      </Box>
     </Box>
   );
 }
